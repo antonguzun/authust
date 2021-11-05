@@ -1,0 +1,17 @@
+version: "3.3"
+services:
+  replaced_phone_db:
+    image: postgres:14.0-alpine
+    environment:
+        - POSTGRES_PASSWORD=dbpass
+        - POSTGRES_DB=db
+    ports:
+        - "5432:5432"
+    networks:
+        - custom
+    logging:
+      driver: none
+
+networks:
+  custom:
+    driver: bridge
