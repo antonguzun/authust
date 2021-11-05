@@ -1,10 +1,8 @@
+use crate::common::{create_config, ConfigDisplay};
 use crate::handlers::{
     create_entity, delete_entity, echo, echo_event, get_entities, get_entity, hello,
 };
-use crate::common::{ConfigDisplay, create_config};
-use actix_web::{
-    web, App, HttpServer
-};
+use actix_web::{web, App, HttpServer};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -27,5 +25,5 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-mod handlers;
 mod common;
+mod handlers;

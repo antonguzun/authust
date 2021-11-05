@@ -1,8 +1,6 @@
-use actix_web::{
-    delete, get, post, web, HttpRequest, HttpResponse, Responder,
-};
-use serde::{Deserialize, Serialize};
 use crate::common::Config;
+use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
 
 #[get("/")]
 pub async fn hello(_: HttpRequest) -> impl Responder {
@@ -62,4 +60,3 @@ pub struct EntityQuery {
 pub async fn get_entities(q: web::Query<EntityQuery>) -> impl Responder {
     HttpResponse::Ok().body(format!("search by text {}", q.text))
 }
-

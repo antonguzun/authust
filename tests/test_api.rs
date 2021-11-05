@@ -1,6 +1,6 @@
 use actix_web::{body::Body, test, web, App};
-use handlers::greetings;
 use common::Config;
+use handlers::greetings;
 
 #[actix_rt::test]
 async fn test_get_entity() {
