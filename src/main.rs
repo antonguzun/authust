@@ -3,6 +3,8 @@ use crate::handlers::{
     create_entity, delete_entity, echo, echo_event, get_entities, get_entity, hello,
 };
 use actix_web::{web, App, HttpServer};
+use log::{info};
+extern crate env_logger;
 
 pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(hello)
@@ -18,7 +20,9 @@ pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let config = Config::create_config();
-    config.display();
+    env_logger::init();
+    info!(target: "init", "{:#?}", config);
+    // println!("{:#?}", config);
     HttpServer::new(move || {
         App::new()
             .app_data(config.clone())

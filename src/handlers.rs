@@ -1,6 +1,7 @@
 use crate::common::Config;
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
+use log::error;
 
 #[get("/")]
 pub async fn hello(_: HttpRequest) -> impl Responder {
@@ -41,6 +42,7 @@ pub async fn create_entity(event: web::Json<Event>) -> impl Responder {
 
 #[delete("/entity/{id}")]
 pub async fn delete_entity(id: web::Path<usize>) -> impl Responder {
+    error!(target: "entity", "delete entity with id={}", id);
     HttpResponse::Ok().body(format!("deleted {}", id))
 }
 
