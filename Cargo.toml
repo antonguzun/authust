@@ -3,13 +3,12 @@ name = "rust_crud"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 log = "0.4.14"
-serde = {version = "1.0", features = ["derive"]}
-actix-web = "3"
-actix-rt = "2.4.0"
 env_logger = "0.9.0"
-r2d2 = "0.8.9"
-r2d2_postgres = "0.18.1"
+serde = {version = "1.0", features = ["derive"]}
+
+actix-web = "4.0.0-beta.8"
+
+deadpool-postgres = "0.10.0"
+tokio-postgres = "0.7.5"

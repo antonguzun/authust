@@ -1,12 +1,24 @@
 use std::env;
 
-extern crate r2d2;
-use r2d2::Pool;
-use r2d2_postgres::{postgres::NoTls, PostgresConnectionManager};
+use deadpool_postgres;
+use deadpool_postgres::tokio_postgres::NoTls;
+use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
+use tokio_postgres;
+
+#[derive(Clone, Debug)]
+pub struct DbConfig {
+    pub user: String,
+    pub password: String,
+    pub host: String,
+    pub port: u16,
+    pub dbname: String,
+    pub pool_max_size: u8,
+}
 
 #[derive(Clone, Debug)]
 pub struct Config {
     pub database_url: String,
+    pub database_config: DbConfig,
     pub service_name: String,
 }
 
@@ -14,6 +26,14 @@ impl Config {
     pub fn create_config() -> Config {
         Config {
             database_url: env::var("DATABASE_URL").unwrap(),
+            database_config: DbConfig {
+                user: env::var("PG.USER").unwrap(),
+                password: env::var("PG.PASSWORD").unwrap(),
+                host: env::var("PG.HOST").unwrap(),
+                port: env::var("PG.PORT").unwrap().parse().unwrap(),
+                dbname: env::var("PG.DBNAME").unwrap(),
+                pool_max_size: env::var("PG.POOL.MAX_SIZE").unwrap().parse().unwrap(),
+            },
             service_name: env::var("SERVICE_NAME").unwrap(),
         }
     }
@@ -21,13 +41,33 @@ impl Config {
 
 #[derive(Clone)]
 pub struct Resources {
-    pub db_pool: Pool<PostgresConnectionManager<NoTls>>,
+    pub db_pool: Pool,
 }
 
 impl Resources {
     pub async fn create_resources(config: &Config) -> Resources {
-        let manager = PostgresConnectionManager::new(config.database_url.parse().unwrap(), NoTls);
-        let db_pool = r2d2::Pool::new(manager).unwrap();
+        let db_pool = create_pool(&config);
         Resources { db_pool }
     }
+}
+
+fn create_pool(config: &Config) -> Pool {
+    let mut pg_config = tokio_postgres::Config::new();
+    pg_config.user(&config.database_config.user);
+    pg_config.dbname(&config.database_config.dbname);
+    pg_config.password(&config.database_config.password);
+    pg_config.host(&config.database_config.host);
+    pg_config.port(config.database_config.port);
+    pg_config.application_name(&config.service_name);
+    let mgr_config = ManagerConfig {
+        recycling_method: RecyclingMethod::Fast,
+    };
+    let mgr = Manager::from_config(pg_config, NoTls, mgr_config);
+    // let pool = Pool::builder(mgr).max_size(config.database_config.pool_max_size).build().unwrap();
+    let pool = deadpool_postgres::Pool::builder(mgr)
+        .max_size(16)
+        .build()
+        .unwrap();
+
+    pool
 }

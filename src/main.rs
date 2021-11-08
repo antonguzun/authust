@@ -1,20 +1,14 @@
 use crate::common::{Config, Resources};
-use crate::handlers::{
-    create_entity, delete_entity, echo, echo_event, get_entities, get_entity, hello,
-};
+use crate::handlers::{create_entity, delete_entity, get_entities, get_entity};
 use actix_web::{web, App, HttpServer};
 use log::info;
 extern crate env_logger;
 
 pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
-    cfg.service(hello)
-        .service(echo)
-        .service(echo_event)
-        .service(create_entity)
+    cfg.service(create_entity)
         .service(get_entities)
         .service(get_entity)
-        .service(delete_entity)
-        .route("/hey", web::get().to(handlers::greetings));
+        .service(delete_entity);
 }
 
 #[actix_web::main]
