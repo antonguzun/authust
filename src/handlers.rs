@@ -1,7 +1,9 @@
-use crate::common::Config;
+use crate::common::{Config, Resources};
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
 use log::error;
+use serde::{Deserialize, Serialize};
+use web::Data;
+use r2d2_postgres::postgres::Statement;
 
 #[get("/")]
 pub async fn hello(_: HttpRequest) -> impl Responder {
@@ -11,6 +13,11 @@ pub async fn hello(_: HttpRequest) -> impl Responder {
 #[post("/echo")]
 pub async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EventCreate {
+    name: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -33,9 +40,18 @@ pub async fn greetings(req: HttpRequest) -> impl Responder {
 }
 
 #[post("/entity")]
-pub async fn create_entity(event: web::Json<Event>) -> impl Responder {
+pub async fn create_entity(
+    event: web::Json<EventCreate>,
+    resources: Data<Resources>,
+) -> impl Responder {
+    let mut conn = resources.db_pool.get().unwrap();
+    let stmt: Statement = conn.prepare(
+        "INSERT INTO entities (name) VALUES ($1) RETURNING entity_id").unwrap();
+    let rows = conn.query(&stmt, &[&event.name]).unwrap();
+    let event_id = rows.iter().next().unwrap().get(0);
+
     HttpResponse::Ok().json(Event {
-        id: event.id,
+        id: event_id,
         name: event.name.clone(),
     })
 }
