@@ -27,12 +27,12 @@ impl Config {
         Config {
             database_url: env::var("DATABASE_URL").unwrap(),
             database_config: DbConfig {
-                user: env::var("PG.USER").unwrap(),
-                password: env::var("PG.PASSWORD").unwrap(),
-                host: env::var("PG.HOST").unwrap(),
-                port: env::var("PG.PORT").unwrap().parse().unwrap(),
-                dbname: env::var("PG.DBNAME").unwrap(),
-                pool_max_size: env::var("PG.POOL.MAX_SIZE").unwrap().parse().unwrap(),
+                user: env::var("PG_USER").unwrap(),
+                password: env::var("PG_PASSWORD").unwrap(),
+                host: env::var("PG_HOST").unwrap(),
+                port: env::var("PG_PORT").unwrap().parse().unwrap(),
+                dbname: env::var("PG_DBNAME").unwrap(),
+                pool_max_size: env::var("PG_POOL_MAX_SIZE").unwrap().parse().unwrap(),
             },
             service_name: env::var("SERVICE_NAME").unwrap(),
         }
