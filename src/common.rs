@@ -1,6 +1,5 @@
 use std::env;
 
-use deadpool_postgres;
 use deadpool_postgres::tokio_postgres::NoTls;
 use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
 use tokio_postgres;
@@ -12,12 +11,11 @@ pub struct DbConfig {
     pub host: String,
     pub port: u16,
     pub dbname: String,
-    pub pool_max_size: u8,
+    pub pool_max_size: usize,
 }
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    pub database_url: String,
     pub database_config: DbConfig,
     pub service_name: String,
 }
@@ -25,7 +23,6 @@ pub struct Config {
 impl Config {
     pub fn create_config() -> Config {
         Config {
-            database_url: env::var("DATABASE_URL").unwrap(),
             database_config: DbConfig {
                 user: env::var("PG_USER").unwrap(),
                 password: env::var("PG_PASSWORD").unwrap(),
@@ -63,9 +60,8 @@ fn create_pool(config: &Config) -> Pool {
         recycling_method: RecyclingMethod::Fast,
     };
     let mgr = Manager::from_config(pg_config, NoTls, mgr_config);
-    // let pool = Pool::builder(mgr).max_size(config.database_config.pool_max_size).build().unwrap();
-    let pool = deadpool_postgres::Pool::builder(mgr)
-        .max_size(16)
+    let pool = Pool::builder(mgr)
+        .max_size(config.database_config.pool_max_size)
         .build()
         .unwrap();
 

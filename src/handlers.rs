@@ -14,12 +14,10 @@ pub struct Entity {
     name: String,
 }
 
-#[post("/echo_event")]
-pub async fn echo_event(event: web::Json<Entity>) -> impl Responder {
-    HttpResponse::Ok().json(Entity {
-        id: event.id,
-        name: event.name.clone(),
-    })
+#[derive(Serialize, Deserialize)]
+pub struct EntityQuery {
+    offset: Option<i64>,
+    limit: Option<i64>,
 }
 
 #[post("/entity")]
@@ -68,12 +66,6 @@ pub async fn get_entity(req: HttpRequest, resources: Data<Resources>) -> impl Re
         }),
         Err(_) => HttpResponse::NotFound().body("Not Found"),
     }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct EntityQuery {
-    offset: Option<i64>,
-    limit: Option<i64>,
 }
 
 #[get("/entity")]
