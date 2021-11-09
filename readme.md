@@ -1,21 +1,21 @@
-This is simple crud web service with postgres integration.
+Simple crud web service with actix-web and async postgres integration.
 
 ### Install and Run
 You have to make sure that docker, docker-compose and cargo ^1.56.0 already installed on your system
 
-How to run dependencies:
+#### How to run dependencies
 ```shell
 make up_db
 ```
 
-Run web service
+#### Run web service
 ```shell
 make run_dev
 ```
 
 ### API:
 
-insert item
+#### insert item
 ```shell
 curl --location --request POST '127.0.0.1:8080/api/v1/entity' \                                                                                        andyguzun@andyguzun-mac
 --header 'Content-Type: application/json' \
@@ -23,17 +23,17 @@ curl --location --request POST '127.0.0.1:8080/api/v1/entity' \                 
 ```
 `{"id":4,"name":"Jeff"}`
 
-get item
+#### get item
 ```shell
 curl --location --request GET '127.0.0.1:8080/api/v1/entity/4'                                                                                     1 ↵ andyguzun@andyguzun-mac
 ```
 `{"id":4,"name":"Jeff"}`
 
-get listing
+#### get listing
 ```shell
 curl --location --request GET '127.0.0.1:8080/api/v1/entity?limit=4'
 ```
-```
+`
 [
     {
         "id": 1,
@@ -52,7 +52,13 @@ curl --location --request GET '127.0.0.1:8080/api/v1/entity?limit=4'
         "name": "Jeff"
     }
 ]
+`
+#### delete item
+```shell
+curl --location --request DELETE '127.0.0.1:8080/api/v1/entity/4' -i '                                                                                     1 ↵ andyguzun@andyguzun-mac
 ```
+`HTTP/1.1 204 No Content`
+
 
 ### Tests
 In progress
