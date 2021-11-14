@@ -4,3 +4,4 @@ CREATE TABLE IF NOT EXISTS entities (
 );
 
 INSERT INTO entities (name) VALUES ('Ivan'), ('Anton'), ('Godzilla');
+

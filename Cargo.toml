@@ -12,3 +12,4 @@ actix-web = "4.0.0-beta.8"
 
 deadpool-postgres = "0.10.0"
 tokio-postgres = "0.7.5"
+actix-rt = "2.4.0"

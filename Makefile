@@ -5,7 +5,3 @@ up_db:
 
 down_db:
 	docker-compose down
-
-run_dev:
-	export $(xargs < .env_example)
-	cargo run

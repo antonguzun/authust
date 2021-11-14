@@ -10,7 +10,7 @@ make up_db
 
 #### Run web service
 ```shell
-make run_dev
+export $(xargs < .env_example) && cargo run
 ```
 
 ### API:
