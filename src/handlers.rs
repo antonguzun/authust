@@ -2,6 +2,9 @@ use crate::common::Resources;
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use web::Data;
+use deadpool_postgres::tokio_postgres::Error;
+use deadpool_postgres::Manager;
+use log::error;
 
 #[derive(Serialize, Deserialize)]
 pub struct EntityCreate {
@@ -39,25 +42,39 @@ pub async fn create_entity(
 }
 
 #[delete("/entity/{entity_id}")]
-pub async fn delete_entity(req: HttpRequest, resources: Data<Resources>) -> impl Responder {
-    let entity_id: i32 = req.match_info().get("entity_id").unwrap().parse().unwrap();
+pub async fn delete_entity(entity_id: web::Path<u32>, resources: Data<Resources>) -> impl Responder {
+    let entity_id = entity_id.into_inner() as i32;
     let client = resources.db_pool.get().await.unwrap();
     let stmt = client
         .prepare("DELETE FROM entities where entity_id=$1")
         .await
         .unwrap();
     client.execute(&stmt, &[&entity_id]).await;
-    HttpResponse::NoContent()
+    HttpResponse::NoContent().body("success")
 }
 
 #[get("/entity/{entity_id}")]
-pub async fn get_entity(req: HttpRequest, resources: Data<Resources>) -> impl Responder {
-    let entity_id: i32 = req.match_info().get("entity_id").unwrap().parse().unwrap();
-    let client = resources.db_pool.get().await.unwrap();
+pub async fn get_entity(entity_id: web::Path<u32>, resources: Data<Resources>) -> impl Responder {
+    let entity_id = entity_id.into_inner() as i32;
+    let client = resources.db_pool.get().await;
+    let client = match client {
+        Ok(c) => c,
+        Err(err) => {
+            error!("{}", err);
+            return HttpResponse::InternalServerError().body("internal err")
+        },
+    };
     let stmt = client
         .prepare("SELECT entity_id, name FROM entities where entity_id=$1")
-        .await
-        .unwrap();
+        .await;
+    let stmt = match stmt {
+        Ok(s) => s,
+        Err(err) => {
+            error!("{}", err);
+            return HttpResponse::InternalServerError().body("internal err")
+        },
+    };
+
     let row = client.query_one(&stmt, &[&entity_id]).await;
     match row {
         Ok(data) => HttpResponse::Ok().json(Entity {

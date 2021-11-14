@@ -1,31 +1,26 @@
-use actix_web::{body::Body, dev::Service, dev::ServiceResponse, test, web, App};
+use actix_web::body::{AnyBody};
+use actix_web::dev::{Service, ServiceResponse};
+use actix_web::{test, web, App};
 use common::{Config, Resources};
 use main::init_api_v1;
+use actix_http::Request;
 
-// async fn init_service() -> ? {
-//     let config = Config::create_config();
-//     let resources = Resources::create_resources(&config).await;
-//     let mut app = test::init_service(
-//         App::new()
-//             .app_data(config.clone())
-//             .data(resources.clone())
-//             .service(web::scope("/api/v1").configure(init_api_v1)),
-//     ).await;
-//     app
-// }
 
-#[actix_rt::test]
-async fn test_get_entity() {
+async fn init_test_service() -> impl Service<Request, Response = ServiceResponse<AnyBody>, Error = actix_web::Error> {
     let config = Config::create_config();
     let resources = Resources::create_resources(&config).await;
-    let mut app = test::init_service(
+    test::init_service(
         App::new()
             .app_data(config.clone())
             .data(resources.clone())
             .service(web::scope("/api/v1").configure(init_api_v1)),
-    )
-    .await;
+    ).await
+}
 
+
+#[actix_rt::test]
+async fn test_get_entity() {
+    let mut app = init_test_service().await;
     let req = test::TestRequest::get()
         .uri("/api/v1/entity/1")
         .to_request();
@@ -35,22 +30,25 @@ async fn test_get_entity() {
 
 #[actix_rt::test]
 async fn test_get_entity_not_found() {
-    let config = Config::create_config();
-    let resources = Resources::create_resources(&config).await;
-    let mut app = test::init_service(
-        App::new()
-            .app_data(config.clone())
-            .data(resources.clone())
-            .service(web::scope("/api/v1").configure(init_api_v1)),
-    )
-    .await;
-
+    let mut app = init_test_service().await;
     let req = test::TestRequest::get()
         .uri("/api/v1/entity/999991")
         .to_request();
     let mut resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
 }
+
+#[actix_rt::test]
+async fn test_get_entity_wrong_params() {
+    let mut app = init_test_service().await;
+    let req = test::TestRequest::get()
+        .uri("/api/v1/entity/sadf")
+        .to_request();
+    let mut resp = test::call_service(&mut app, req).await;
+    // странно что web::Path приводит к 404 ошибке, а не к 400
+    assert_eq!(resp.status(), 404);
+}
+
 
 #[path = "../src/common.rs"]
 mod common;
