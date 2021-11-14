@@ -1,12 +1,12 @@
-use actix_web::body::{AnyBody};
+use actix_http::Request;
+use actix_web::body::AnyBody;
 use actix_web::dev::{Service, ServiceResponse};
 use actix_web::{test, web, App};
 use common::{Config, Resources};
 use main::init_api_v1;
-use actix_http::Request;
 
-
-async fn init_test_service() -> impl Service<Request, Response = ServiceResponse<AnyBody>, Error = actix_web::Error> {
+async fn init_test_service(
+) -> impl Service<Request, Response = ServiceResponse<AnyBody>, Error = actix_web::Error> {
     let config = Config::create_config();
     let resources = Resources::create_resources(&config).await;
     test::init_service(
@@ -14,9 +14,9 @@ async fn init_test_service() -> impl Service<Request, Response = ServiceResponse
             .app_data(config.clone())
             .data(resources.clone())
             .service(web::scope("/api/v1").configure(init_api_v1)),
-    ).await
+    )
+    .await
 }
-
 
 #[actix_rt::test]
 async fn test_get_entity() {
