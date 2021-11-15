@@ -1,8 +1,6 @@
 use crate::common::Resources;
 use crate::services::{get_entity_by_id, Entity};
-use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
-use deadpool_postgres::tokio_postgres::Error;
-use deadpool_postgres::Manager;
+use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 use serde::{Deserialize, Serialize};
 use web::Data;
@@ -51,31 +49,16 @@ pub async fn delete_entity(
 #[get("/entity/{entity_id}")]
 pub async fn get_entity(entity_id: web::Path<u32>, resources: Data<Resources>) -> impl Responder {
     let entity_id = entity_id.into_inner() as i32;
-    let client = resources.db_pool.get().await;
-    let client = match client {
-        Ok(c) => c,
-        Err(err) => {
-            error!("{}", err);
-            return HttpResponse::InternalServerError().body("internal err");
-        }
-    };
-    let stmt = client
-        .prepare("SELECT entity_id, name FROM entities where entity_id=$1")
-        .await;
-    let stmt = match stmt {
-        Ok(s) => s,
-        Err(err) => {
-            error!("{}", err);
-            return HttpResponse::InternalServerError().body("internal err");
-        }
-    };
-    let row = client.query(&stmt, &[&entity_id]).await;
-    match row {
-        Ok(data) => match data.len() {
-            0 => HttpResponse::NotFound().body("Not Found"),
-            _ => HttpResponse::Ok().json(Entity::new(entity_id, data[0].get(1))),
+    let result = get_entity_by_id(resources.db_pool.clone(), entity_id).await;
+    match result {
+        Ok(data) => match data {
+            Some(data) => HttpResponse::Ok().json(data),
+            None => HttpResponse::NotFound().body("Not Found"),
         },
-        Err(_) => HttpResponse::InternalServerError().body("internal error"),
+        Err(e) => {
+            error!("{}", e);
+            HttpResponse::InternalServerError().body("internal error")
+        }
     }
 }
 
