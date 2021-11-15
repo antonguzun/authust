@@ -1,5 +1,5 @@
 use crate::common::Resources;
-use crate::services::{get_entity_by_id, Entity};
+use crate::services::{get_entity_by_id, remove_entity_by_id, Entity};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -37,13 +37,14 @@ pub async fn delete_entity(
     resources: Data<Resources>,
 ) -> impl Responder {
     let entity_id = entity_id.into_inner() as i32;
-    let client = resources.db_pool.get().await.unwrap();
-    let stmt = client
-        .prepare("DELETE FROM entities where entity_id=$1")
-        .await
-        .unwrap();
-    client.execute(&stmt, &[&entity_id]).await;
-    HttpResponse::NoContent().body("success")
+    let res = remove_entity_by_id(resources.db_pool.clone(), entity_id).await;
+    match res {
+        Ok(_) => HttpResponse::NoContent().body(""),
+        Err(e) => {
+            error!("{}", e);
+            HttpResponse::InternalServerError().body("internal error")
+        }
+    }
 }
 
 #[get("/entity/{entity_id}")]
@@ -51,8 +52,8 @@ pub async fn get_entity(entity_id: web::Path<u32>, resources: Data<Resources>) -
     let entity_id = entity_id.into_inner() as i32;
     let result = get_entity_by_id(resources.db_pool.clone(), entity_id).await;
     match result {
-        Ok(data) => match data {
-            Some(data) => HttpResponse::Ok().json(data),
+        Ok(entity) => match entity {
+            Some(entity) => HttpResponse::Ok().json(entity),
             None => HttpResponse::NotFound().body("Not Found"),
         },
         Err(e) => {

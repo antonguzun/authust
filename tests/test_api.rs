@@ -49,6 +49,25 @@ async fn test_get_entity_wrong_params() {
     assert_eq!(resp.status(), 404);
 }
 
+#[actix_rt::test]
+async fn test_delete_entity() {
+    let mut app = init_test_service().await;
+    let req = test::TestRequest::delete()
+        .uri("/api/v1/entity/3")
+        .to_request();
+    let mut resp = test::call_service(&mut app, req).await;
+    assert_eq!(resp.status(), 204)
+}
+
+#[actix_rt::test]
+async fn test_delete_entity_404() {
+    let mut app = init_test_service().await;
+    let req = test::TestRequest::delete()
+        .uri("/api/v1/entity/999")
+        .to_request();
+    let mut resp = test::call_service(&mut app, req).await;
+    assert_eq!(resp.status(), 204)
+}
 
 #[path = "../src/common.rs"]
 mod common;

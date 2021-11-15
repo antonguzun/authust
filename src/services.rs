@@ -14,10 +14,11 @@ impl Entity {
     }
 }
 
-pub async fn get_entity_by_id(
-    db_pool: Pool,
-    entity_id: i32,
-) -> Result<Option<Entity>, Box<dyn error::Error>> {
+type ServiceResult<T> = Result<T, Box<dyn error::Error>>;
+type SingleEntityResult = ServiceResult<Option<Entity>>;
+type EmptyResult = ServiceResult<()>;
+
+pub async fn get_entity_by_id(db_pool: Pool, entity_id: i32) -> SingleEntityResult {
     let client = db_pool.get().await?;
     let stmt = client
         .prepare("SELECT entity_id, name FROM entities where entity_id=$1")
@@ -27,4 +28,13 @@ pub async fn get_entity_by_id(
         0 => Ok(None),
         _ => Ok(Some(Entity::new(entity_id, rows[0].get(1)))),
     }
+}
+
+pub async fn remove_entity_by_id(db_pool: Pool, entity_id: i32) -> EmptyResult {
+    let client = db_pool.get().await?;
+    let stmt = client
+        .prepare("DELETE FROM entities where entity_id=$1")
+        .await?;
+    client.execute(&stmt, &[&entity_id]).await?;
+    Ok(())
 }
