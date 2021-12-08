@@ -73,5 +73,3 @@ mod common;
 mod handlers;
 #[path = "../src/main.rs"]
 mod main;
-#[path = "../src/services.rs"]
-mod services;

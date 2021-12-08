@@ -1,7 +1,5 @@
 use crate::common::{Config, Resources};
-use crate::handlers::{
-    create_entity, delete_entity, delete_user_by_id, get_entities, get_entity, get_user_by_id,
-};
+use crate::handlers::{create_user, delete_user_by_id, get_user_by_id};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use log::info;
@@ -9,12 +7,9 @@ use log::info;
 extern crate env_logger;
 
 pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_entity)
-        .service(get_entities)
-        .service(get_entity)
-        .service(delete_entity)
-        .service(get_user_by_id)
-        .service(delete_user_by_id);
+    cfg.service(get_user_by_id)
+        .service(delete_user_by_id)
+        .service(create_user);
 }
 
 pub fn run_server(resources: Resources, config: Config) -> Result<Server, std::io::Error> {
@@ -40,6 +35,5 @@ async fn main() -> std::io::Result<()> {
 
 mod common;
 mod handlers;
-mod services;
 mod storage;
 mod usecases;

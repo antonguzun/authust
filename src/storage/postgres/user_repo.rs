@@ -1,9 +1,6 @@
-use crate::common::Resources;
-use crate::usecases::user::get_user::{
-    FindUserById, RemoveUserById, RepoError, SingleUserResult, User,
-};
+use crate::usecases::user::entities::{User, UserContent};
+use crate::usecases::user::get_user::{CreateUser, FindUserById, RemoveUserById, RepoError};
 use async_trait::async_trait;
-use deadpool_postgres::tokio_postgres::{Error, Row};
 use deadpool_postgres::Pool;
 use log::error;
 
@@ -24,7 +21,7 @@ impl FindUserById for UserRepo {
             Ok(client) => client,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoFatalError);
+                return Err(RepoError::RepoTemporaryError);
             }
         };
 
@@ -59,7 +56,7 @@ impl RemoveUserById for UserRepo {
             Ok(client) => client,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoFatalError);
+                return Err(RepoError::RepoTemporaryError);
             }
         };
         let stmt = match client.prepare("DELETE FROM users where user_id=$1").await {
@@ -80,5 +77,34 @@ impl RemoveUserById for UserRepo {
             0 => Err(RepoError::RepoNotFoundError),
             _ => Ok(()),
         }
+    }
+}
+
+#[async_trait]
+impl CreateUser for UserRepo {
+    async fn create_user(&self, user: UserContent) -> Result<User, RepoError> {
+        let client = match self.db_pool.get().await {
+            Ok(client) => client,
+            Err(e) => {
+                error!("{}", e);
+                return Err(RepoError::RepoTemporaryError);
+            }
+        };
+
+        let stmt = match client
+            .prepare("INSERT INTO users (name) VALUES ($1) RETURNING user_id, name")
+            .await
+        {
+            Ok(stmt) => stmt,
+            Err(e) => {
+                error!("{}", e);
+                return Err(RepoError::RepoFatalError);
+            }
+        };
+        let user = match client.query(&stmt, &[&user.name]).await {
+            Ok(rows) if rows.len() == 1 => User::new(rows[0].get(0), rows[0].get(1)),
+            _ => return Err(RepoError::RepoFatalError),
+        };
+        Ok(user)
     }
 }

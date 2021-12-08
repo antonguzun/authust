@@ -1,24 +1,10 @@
+use crate::usecases::user::entities::{User, UserContent};
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
-use std::error;
-
-#[derive(Serialize, Deserialize)]
-pub struct User {
-    id: i32,
-    name: String,
-}
-
-impl User {
-    pub fn new(id: i32, name: String) -> User {
-        User { id, name }
-    }
-}
 
 pub enum RepoError {
     RepoFatalError,
     RepoTemporaryError,
     RepoNotFoundError,
-    RepoUnexpectedError,
 }
 
 pub enum UserUCError {
@@ -27,26 +13,9 @@ pub enum UserUCError {
     NotFoundError,
 }
 
-type ServiceResult<T> = Result<T, UserUCError>;
-pub type SingleUserResult = ServiceResult<User>;
-pub type UserIdResult = ServiceResult<i32>;
-pub type EmptyResult = ServiceResult<()>;
-
 #[async_trait]
 pub trait FindUserById {
     async fn find_user_by_id(&self, user_id: i32) -> Result<User, RepoError>;
-}
-
-pub async fn get_user_by_id(
-    user_repo: &impl FindUserById,
-    user_id: i32,
-) -> Result<User, UserUCError> {
-    let res = user_repo.find_user_by_id(user_id).await;
-    match res {
-        Ok(user) => Ok(user),
-        Err(RepoError::RepoNotFoundError) => Err(UserUCError::NotFoundError),
-        Err(_) => Err(UserUCError::FatalError),
-    }
 }
 
 #[async_trait]
@@ -54,14 +23,47 @@ pub trait RemoveUserById {
     async fn remove_user_by_id(&self, user_id: i32) -> Result<(), RepoError>;
 }
 
+#[async_trait]
+pub trait CreateUser {
+    async fn create_user(&self, user: UserContent) -> Result<User, RepoError>;
+}
+
+#[async_trait]
+pub trait GetUsers {
+    async fn update_user_by_id(&self, limit: i64, offset: i64) -> Result<User, RepoError>;
+}
+
+pub async fn get_user_by_id(
+    user_repo: &impl FindUserById,
+    user_id: i32,
+) -> Result<User, UserUCError> {
+    match user_repo.find_user_by_id(user_id).await {
+        Ok(user) => Ok(user),
+        Err(RepoError::RepoNotFoundError) => Err(UserUCError::NotFoundError),
+        Err(RepoError::RepoTemporaryError) => Err(UserUCError::TemporaryError),
+        Err(_) => Err(UserUCError::FatalError),
+    }
+}
+
 pub async fn remove_user_by_id(
     user_repo: &impl RemoveUserById,
     user_id: i32,
 ) -> Result<(), UserUCError> {
-    let res = user_repo.remove_user_by_id(user_id).await;
-    match res {
+    match user_repo.remove_user_by_id(user_id).await {
         Ok(()) => Ok(()),
         Err(RepoError::RepoNotFoundError) => Err(UserUCError::NotFoundError),
+        Err(RepoError::RepoTemporaryError) => Err(UserUCError::TemporaryError),
+        Err(_) => Err(UserUCError::FatalError),
+    }
+}
+
+pub async fn create_user(
+    user_repo: &impl CreateUser,
+    user: UserContent,
+) -> Result<User, UserUCError> {
+    match user_repo.create_user(user).await {
+        Ok(user) => Ok(user),
+        Err(RepoError::RepoTemporaryError) => Err(UserUCError::TemporaryError),
         Err(_) => Err(UserUCError::FatalError),
     }
 }
