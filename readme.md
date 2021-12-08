@@ -17,7 +17,7 @@ export $(xargs < .env_example) && cargo run
 
 #### insert item
 ```shell
-curl --location --request POST '127.0.0.1:8080/api/v1/entity' \                                                                                        andyguzun@andyguzun-mac
+curl --location --request POST '127.0.0.1:8080/api/v1/user' \                                                                                        andyguzun@andyguzun-mac
 --header 'Content-Type: application/json' \
 --data-raw '{"name": "Jeff"}'
 ```
@@ -25,13 +25,13 @@ curl --location --request POST '127.0.0.1:8080/api/v1/entity' \                 
 
 #### get item
 ```shell
-curl --location --request GET '127.0.0.1:8080/api/v1/entity/4'                                                                                     1 ↵ andyguzun@andyguzun-mac
+curl --location --request GET '127.0.0.1:8080/api/v1/user/4'                                                                                     1 ↵ andyguzun@andyguzun-mac
 ```
 `{"id":4,"name":"Jeff"}`
 
 #### get listing
 ```shell
-curl --location --request GET '127.0.0.1:8080/api/v1/entity?limit=4'
+curl --location --request GET '127.0.0.1:8080/api/v1/user?limit=4'
 ```
 `
 [
@@ -55,7 +55,7 @@ curl --location --request GET '127.0.0.1:8080/api/v1/entity?limit=4'
 `
 #### delete item
 ```shell
-curl --location --request DELETE '127.0.0.1:8080/api/v1/entity/4' -i '                                                                                     1 ↵ andyguzun@andyguzun-mac
+curl --location --request DELETE '127.0.0.1:8080/api/v1/user/4' -i '                                                                                     1 ↵ andyguzun@andyguzun-mac
 ```
 `HTTP/1.1 204 No Content`
 

@@ -1139,6 +1139,7 @@ dependencies = [
  "actix-http",
  "actix-rt",
  "actix-web",
+ "async-trait",
  "deadpool-postgres",
  "env_logger",
  "log",

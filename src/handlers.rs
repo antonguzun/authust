@@ -1,5 +1,7 @@
 use crate::common::Resources;
 use crate::services::{get_entity_by_id, remove_entity_by_id, Entity};
+use crate::storage;
+use crate::usecases::user::get_user;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -81,4 +83,35 @@ pub async fn get_entities(
         .map(|row| Entity::new(row.get(0), row.get(1)))
         .collect();
     HttpResponse::Ok().json(entities)
+}
+
+#[get("/user/postgres/{user_id}")]
+pub async fn get_user_by_id(user_id: web::Path<u32>, resources: Data<Resources>) -> impl Responder {
+    let user_id = user_id.into_inner() as i32;
+    let user_repo = storage::postgres::user_repo::UserRepo::new(resources.db_pool.clone());
+    match get_user::get_user_by_id(&user_repo, user_id).await {
+        Ok(user) => HttpResponse::Ok().json(user),
+        Err(get_user::UserUCError::NotFoundError) => HttpResponse::NotFound().body("Not Found"),
+        Err(e) => {
+            error!("usecase error");
+            HttpResponse::InternalServerError().body("internal error")
+        }
+    }
+}
+
+#[delete("/user/postgres/{user_id}")]
+pub async fn delete_user_by_id(
+    user_id: web::Path<u32>,
+    resources: Data<Resources>,
+) -> impl Responder {
+    let user_id = user_id.into_inner() as i32;
+    let user_repo = storage::postgres::user_repo::UserRepo::new(resources.db_pool.clone());
+    match get_user::remove_user_by_id(&user_repo, user_id).await {
+        Ok(_) => HttpResponse::NoContent().body(""),
+        Err(get_user::UserUCError::NotFoundError) => HttpResponse::NoContent().body(""),
+        Err(e) => {
+            error!("usecase error");
+            HttpResponse::InternalServerError().body("internal error")
+        }
+    }
 }

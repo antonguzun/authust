@@ -21,9 +21,7 @@ async fn init_test_service(
 #[actix_rt::test]
 async fn test_get_entity() {
     let mut app = init_test_service().await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/entity/1")
-        .to_request();
+    let req = test::TestRequest::get().uri("/api/v1/user/1").to_request();
     let mut resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 200)
 }
@@ -32,7 +30,7 @@ async fn test_get_entity() {
 async fn test_get_entity_not_found() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::get()
-        .uri("/api/v1/entity/999991")
+        .uri("/api/v1/user/999991")
         .to_request();
     let mut resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
@@ -42,7 +40,7 @@ async fn test_get_entity_not_found() {
 async fn test_get_entity_wrong_params() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::get()
-        .uri("/api/v1/entity/sadf")
+        .uri("/api/v1/user/sadf")
         .to_request();
     let mut resp = test::call_service(&mut app, req).await;
     // странно что web::Path приводит к 404 ошибке, а не к 400
@@ -53,7 +51,7 @@ async fn test_get_entity_wrong_params() {
 async fn test_delete_entity() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::delete()
-        .uri("/api/v1/entity/3")
+        .uri("/api/v1/user/3")
         .to_request();
     let mut resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 204)
@@ -63,7 +61,7 @@ async fn test_delete_entity() {
 async fn test_delete_entity_404() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::delete()
-        .uri("/api/v1/entity/999")
+        .uri("/api/v1/user/999")
         .to_request();
     let mut resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 204)
