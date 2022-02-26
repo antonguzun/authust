@@ -67,16 +67,14 @@ impl RemoveUserById for UserRepo {
             }
         };
         let res = match client.execute(&stmt, &[&user_id]).await {
-            Ok(rows) => rows,
+            Ok(res) if res == 0 => return Err(RepoError::RepoNotFoundError),
+            Ok(_) => Ok(()),
             Err(e) => {
                 error!("{}", e);
                 return Err(RepoError::RepoFatalError);
             }
         };
-        match res {
-            0 => Err(RepoError::RepoNotFoundError),
-            _ => Ok(()),
-        }
+        res
     }
 }
 

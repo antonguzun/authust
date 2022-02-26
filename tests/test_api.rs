@@ -1,14 +1,24 @@
 use actix_http::Request;
-use actix_web::body::AnyBody;
+use actix_web::body::BoxBody;
 use actix_web::dev::{Service, ServiceResponse};
 use actix_web::{test, web, App};
 use common::{Config, Resources};
 use main::init_api_v1;
 
+
+async fn clean_db(resources: &Resources) -> () {
+    let client = resources.db_pool.get().await.unwrap();
+    let stmt = client
+            .prepare("TRUNCATE users")
+            .await.unwrap();
+    client.execute(&stmt, &[]).await.unwrap();
+}
+
 async fn init_test_service(
-) -> impl Service<Request, Response = ServiceResponse<AnyBody>, Error = actix_web::Error> {
+) -> impl Service<Request, Response = ServiceResponse<BoxBody>, Error = actix_web::Error> {
     let config = Config::create_config();
     let resources = Resources::create_resources(&config).await;
+    clean_db(&resources).await.unwrap();
     test::init_service(
         App::new()
             .app_data(config.clone())
@@ -73,3 +83,9 @@ mod common;
 mod handlers;
 #[path = "../src/main.rs"]
 mod main;
+#[path = "../src/usecases.rs"]
+mod usecases;
+#[path = "../src/storage.rs"]
+mod storage;
+#[path = "../src/usecases/user.rs"]
+mod user;
