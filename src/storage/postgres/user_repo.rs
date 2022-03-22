@@ -1,6 +1,8 @@
-use crate::usecases::user::entities::{User, UserContent};
-use crate::usecases::user::get_user::{CreateUser, FindUserById, RemoveUserById, RepoError};
+use crate::usecases::user::entities::{User, UserForCreation};
+use crate::usecases::user::get_user::{FindUserById, RemoveUserById, RepoError};
+use crate::usecases::user::user_creator::{AccessModelError, CreateUser};
 use async_trait::async_trait;
+use chrono;
 use deadpool_postgres::Pool;
 use log::error;
 
@@ -26,7 +28,7 @@ impl FindUserById for UserRepo {
         };
 
         let stmt = match client
-            .prepare("SELECT user_id, name FROM users where user_id=$1")
+            .prepare("SELECT user_id, username, enabled, created_at, updated_at FROM users where user_id=$1")
             .await
         {
             Ok(stmt) => stmt,
@@ -44,7 +46,13 @@ impl FindUserById for UserRepo {
         };
         match rows.len() {
             0 => Err(RepoError::RepoNotFoundError),
-            _ => Ok(User::new(user_id, rows[0].get(1))),
+            _ => Ok(User::new(
+                rows[0].get(0),
+                rows[0].get(1),
+                rows[0].get(2),
+                rows[0].get(3),
+                rows[0].get(4),
+            )),
         }
     }
 }
@@ -80,28 +88,52 @@ impl RemoveUserById for UserRepo {
 
 #[async_trait]
 impl CreateUser for UserRepo {
-    async fn create_user(&self, user: UserContent) -> Result<User, RepoError> {
+    async fn save_user_in_storage(&self, user: UserForCreation) -> Result<User, AccessModelError> {
         let client = match self.db_pool.get().await {
             Ok(client) => client,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoTemporaryError);
+                return Err(AccessModelError::TemporaryError);
             }
         };
-
-        let stmt = match client
-            .prepare("INSERT INTO users (name) VALUES ($1) RETURNING user_id, name")
-            .await
-        {
+        let query = "INSERT INTO users (username, password_hash, enabled, created_at, updated_at, is_deleted)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id, username, enabled, created_at, updated_at";
+        let stmt = match client.prepare(query).await {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoFatalError);
+                return Err(AccessModelError::FatalError);
             }
         };
-        let user = match client.query(&stmt, &[&user.name]).await {
-            Ok(rows) if rows.len() == 1 => User::new(rows[0].get(0), rows[0].get(1)),
-            _ => return Err(RepoError::RepoFatalError),
+        let now = chrono::Utc::now();
+        let user = match client
+            .query(
+                &stmt,
+                &[
+                    &user.username,
+                    &user.password_hash,
+                    &true,
+                    &now,
+                    &now,
+                    &false,
+                ],
+            )
+            .await
+        {
+            Ok(rows) if rows.len() == 1 => User::new(
+                rows[0].get(0),
+                rows[0].get(1),
+                rows[0].get(2),
+                rows[0].get(3),
+                rows[0].get(4),
+            ),
+            Err(e) => {
+                error!("{}", e);
+                return Err(AccessModelError::FatalError);
+            }
+            Ok(_) => {
+                return Err(AccessModelError::FatalError);
+            }
         };
         Ok(user)
     }

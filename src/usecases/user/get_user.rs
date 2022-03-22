@@ -1,4 +1,4 @@
-use crate::usecases::user::entities::{User, UserContent};
+use crate::usecases::user::entities::User;
 use async_trait::async_trait;
 
 pub enum RepoError {
@@ -21,11 +21,6 @@ pub trait FindUserById {
 #[async_trait]
 pub trait RemoveUserById {
     async fn remove_user_by_id(&self, user_id: i32) -> Result<(), RepoError>;
-}
-
-#[async_trait]
-pub trait CreateUser {
-    async fn create_user(&self, user: UserContent) -> Result<User, RepoError>;
 }
 
 #[async_trait]
@@ -52,17 +47,6 @@ pub async fn remove_user_by_id(
     match user_repo.remove_user_by_id(user_id).await {
         Ok(()) => Ok(()),
         Err(RepoError::RepoNotFoundError) => Err(UserUCError::NotFoundError),
-        Err(RepoError::RepoTemporaryError) => Err(UserUCError::TemporaryError),
-        Err(_) => Err(UserUCError::FatalError),
-    }
-}
-
-pub async fn create_user(
-    user_repo: &impl CreateUser,
-    user: UserContent,
-) -> Result<User, UserUCError> {
-    match user_repo.create_user(user).await {
-        Ok(user) => Ok(user),
         Err(RepoError::RepoTemporaryError) => Err(UserUCError::TemporaryError),
         Err(_) => Err(UserUCError::FatalError),
     }

@@ -1,7 +1,7 @@
 use crate::common::Resources;
 use crate::storage;
-use crate::usecases::user::entities::UserContent;
-use crate::usecases::user::get_user;
+use crate::usecases::user::entities::{InputRawUser, User};
+use crate::usecases::user::{get_user, user_creator};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 use web::Data;
@@ -63,13 +63,13 @@ pub async fn delete_user_by_id(
     }
 }
 
-#[post("/user/postgres")]
-pub async fn create_user(
-    user_data: web::Json<UserContent>,
+#[post("/user/")]
+pub async fn create_user_handler(
+    user_data: web::Json<InputRawUser>,
     resources: Data<Resources>,
 ) -> impl Responder {
-    let user_repo = storage::postgres::user_repo::UserRepo::new(resources.db_pool.clone());
-    match get_user::create_user(&user_repo, user_data.into_inner()).await {
+    let user_access_model = storage::postgres::user_repo::UserRepo::new(resources.db_pool.clone());
+    match user_creator::create_new_user(&user_access_model, user_data.into_inner()).await {
         Ok(user) => HttpResponse::Created().json(user),
         Err(_) => {
             error!("usecase error");

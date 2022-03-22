@@ -7,11 +7,12 @@ edition = "2021"
 log = "0.4.14"
 env_logger = "0.9.0"
 serde = {version = "1.0", features = ["derive"]}
+chrono = { version = "0.4", features = ["serde"] }
 
 actix-web = "4.0.1"
 
 deadpool-postgres = "0.10.0"
-tokio-postgres = "0.7.5"
+tokio-postgres = { version = "^0.7.5", features = ["with-chrono-0_4", "with-time-0_2"]}
 actix-rt = "2.4.0"
 actix-http = "3.0.0-beta.11"
 async-trait = "0.1.51"
