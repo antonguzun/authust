@@ -3,11 +3,11 @@ use std::time::SystemTime;
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
-    user_id: i32,
-    username: String,
-    enabled: bool,
-    created_at: SystemTime,
-    updated_at: SystemTime,
+    pub user_id: i32,
+    pub username: String,
+    pub enabled: bool,
+    pub created_at: SystemTime,
+    pub updated_at: SystemTime,
 }
 
 #[derive(Serialize, Deserialize)]
