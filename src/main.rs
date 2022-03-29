@@ -1,16 +1,10 @@
-use crate::common::{Config, Resources};
-use crate::handlers::{create_user_handler, delete_user_by_id, get_user_by_id};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use log::info;
+use rust_crud::apps::init_api_v1;
+use rust_crud::common::{Config, Resources};
 
 extern crate env_logger;
-
-pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
-    cfg.service(get_user_by_id)
-        .service(delete_user_by_id)
-        .service(create_user_handler);
-}
 
 pub fn run_server(resources: Resources, config: Config) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(move || {
@@ -32,8 +26,3 @@ async fn main() -> std::io::Result<()> {
     info!(target: "init", "{:#?}", config);
     run_server(resources, config)?.await
 }
-
-mod common;
-mod handlers;
-mod storage;
-mod usecases;
