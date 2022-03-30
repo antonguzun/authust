@@ -16,21 +16,23 @@ async fn refresh_db(resources: &Resources) -> () {
     for path in migration_paths {
         let filename = path.unwrap().path().display().to_string();
         let query = &fs::read_to_string(&filename).unwrap();
-        let stmt = client.prepare(query).await.unwrap();
-        client.execute(&stmt, &[]).await.unwrap();
+        client.query(query, &[]).await.unwrap();
     }
 
-    let stmt = client.prepare("TRUNCATE TABLE users;").await.unwrap();
-    client.execute(&stmt, &[]).await.unwrap();
-
-    let stmt = client.prepare(
-        "INSERT INTO users (user_id, username, password_hash, enabled, created_at, updated_at, is_deleted)
+    client.query("TRUNCATE TABLE users;", &[]).await.unwrap();
+    client
+        .query(
+            "INSERT INTO users 
+        (user_id, username, password_hash, enabled, created_at, updated_at, is_deleted)
         VALUES 
         (1, 'Ivan', '1234', TRUE, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
         (2, 'Anton', '1234', TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
-        (3, 'Godzilla', '1234', TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE);"
-    ).await.unwrap();
-    client.execute(&stmt, &[]).await.unwrap();
+        (3, 'Godzilla', '1234', TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE)
+        ON CONFLICT DO NOTHING;",
+            &[],
+        )
+        .await
+        .unwrap();
 }
 
 async fn init_test_service(
