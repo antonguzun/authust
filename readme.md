@@ -3,9 +3,17 @@ Simple crud web service with actix-web and async postgres integration.
 ### Install and Run
 You have to make sure that docker, docker-compose and cargo ^1.56.0 already installed on your system
 
+#### Add enviroments
+```shell
+make add_test_env
+```
 #### How to run dependencies
 ```shell
 make up_db
+```
+#### Run tests
+```shell
+make tests
 ```
 
 #### Run web service

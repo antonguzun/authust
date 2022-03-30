@@ -1,6 +1,6 @@
 use crate::common::Resources;
 use crate::storage;
-use crate::usecases::user::entities::{InputRawUser, User};
+use crate::usecases::user::entities::InputRawUser;
 use crate::usecases::user::{get_user, user_creator};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
