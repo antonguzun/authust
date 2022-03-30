@@ -1,19 +1,8 @@
 use crate::usecases::user::crypto::generate_hash;
 use crate::usecases::user::entities::{InputRawUser, User, UserForCreation};
-use async_trait::async_trait;
+use crate::usecases::user::errors::{AccessModelError, UserUCError};
 
-pub enum AccessModelError {
-    FatalError,
-    TemporaryError,
-    NotFoundError,
-    AlreadyExists,
-}
-pub enum UserUCError {
-    FatalError,
-    TemporaryError,
-    NotFoundError,
-    AlreadyExists,
-}
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait CreateUser {

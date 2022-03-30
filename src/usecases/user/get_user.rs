@@ -1,31 +1,20 @@
 use crate::usecases::user::entities::User;
+use crate::usecases::user::errors::{AccessModelError, UserUCError};
 use async_trait::async_trait;
-
-pub enum RepoError {
-    RepoFatalError,
-    RepoTemporaryError,
-    RepoNotFoundError,
-}
-
-pub enum UserUCError {
-    FatalError,
-    TemporaryError,
-    NotFoundError,
-}
 
 #[async_trait]
 pub trait FindUserById {
-    async fn find_user_by_id(&self, user_id: i32) -> Result<User, RepoError>;
+    async fn find_user_by_id(&self, user_id: i32) -> Result<User, AccessModelError>;
 }
 
 #[async_trait]
 pub trait RemoveUserById {
-    async fn remove_user_by_id(&self, user_id: i32) -> Result<(), RepoError>;
+    async fn remove_user_by_id(&self, user_id: i32) -> Result<(), AccessModelError>;
 }
 
 #[async_trait]
 pub trait GetUsers {
-    async fn update_user_by_id(&self, limit: i64, offset: i64) -> Result<User, RepoError>;
+    async fn update_user_by_id(&self, limit: i64, offset: i64) -> Result<User, UserUCError>;
 }
 
 pub async fn get_user_by_id(
@@ -34,8 +23,8 @@ pub async fn get_user_by_id(
 ) -> Result<User, UserUCError> {
     match user_repo.find_user_by_id(user_id).await {
         Ok(user) => Ok(user),
-        Err(RepoError::RepoNotFoundError) => Err(UserUCError::NotFoundError),
-        Err(RepoError::RepoTemporaryError) => Err(UserUCError::TemporaryError),
+        Err(AccessModelError::NotFoundError) => Err(UserUCError::NotFoundError),
+        Err(AccessModelError::TemporaryError) => Err(UserUCError::TemporaryError),
         Err(_) => Err(UserUCError::FatalError),
     }
 }
@@ -46,8 +35,8 @@ pub async fn remove_user_by_id(
 ) -> Result<(), UserUCError> {
     match user_repo.remove_user_by_id(user_id).await {
         Ok(()) => Ok(()),
-        Err(RepoError::RepoNotFoundError) => Err(UserUCError::NotFoundError),
-        Err(RepoError::RepoTemporaryError) => Err(UserUCError::TemporaryError),
+        Err(AccessModelError::NotFoundError) => Err(UserUCError::NotFoundError),
+        Err(AccessModelError::TemporaryError) => Err(UserUCError::TemporaryError),
         Err(_) => Err(UserUCError::FatalError),
     }
 }

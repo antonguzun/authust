@@ -39,3 +39,15 @@ impl User {
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct SingnedInfo {
+    pub user_id: i32,
+    pub jwt_token: String,
+}
+
+impl SingnedInfo {
+    pub fn new(user_id: i32, jwt_token: String) -> SingnedInfo {
+        SingnedInfo { user_id, jwt_token }
+    }
+}

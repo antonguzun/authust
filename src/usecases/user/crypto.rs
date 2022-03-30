@@ -1,3 +1,6 @@
+use crate::usecases::user::entities::{InputRawUser, SingnedInfo};
+use crate::usecases::user::errors::{AccessModelError, SignError};
+use async_trait::async_trait;
 use log::error;
 
 use argon2::{self, Config};
@@ -9,7 +12,32 @@ pub fn generate_hash(password: &str) -> Result<String, &str> {
         Ok(hash) => Ok(hash.to_string()),
         Err(e) => {
             error!("hashing password error: {}", e);
-            Err("Some err")
+            Err("hashing password error")
         }
+    }
+}
+
+#[async_trait]
+pub trait SignInVerification {
+    async fn verificate_default(&self, username: &str, hash: &str)
+        -> Result<i32, AccessModelError>;
+}
+
+pub async fn sign_in(
+    verificator: &impl SignInVerification,
+    user_info: InputRawUser,
+) -> Result<SingnedInfo, SignError> {
+    let hash = match generate_hash(&user_info.password) {
+        Ok(hash) => hash,
+        Err(_) => return Err(SignError::FatalError),
+    };
+    match verificator
+        .verificate_default(&user_info.username, &hash)
+        .await
+    {
+        Ok(user_id) => Ok(SingnedInfo::new(user_id, "test_token".to_string())),
+        Err(AccessModelError::NotFoundError) => Err(SignError::VerificationError),
+        Err(AccessModelError::TemporaryError) => Err(SignError::TemporaryError),
+        Err(_) => Err(SignError::FatalError),
     }
 }

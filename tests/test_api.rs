@@ -4,9 +4,11 @@ use actix_web::dev::{Service, ServiceResponse};
 use actix_web::{http::header, test, web, App};
 use rust_crud::apps::init_api_v1;
 use rust_crud::common::{Config, Resources};
-use rust_crud::usecases::user::entities::User;
+use rust_crud::usecases::user::entities::{SingnedInfo, User};
 use serde_json::json;
 use std::fs;
+
+mod constants;
 
 async fn refresh_db(resources: &Resources) -> () {
     let client = resources.db_pool.get().await.unwrap();
@@ -26,10 +28,10 @@ async fn refresh_db(resources: &Resources) -> () {
         (user_id, username, password_hash, enabled, created_at, updated_at, is_deleted)
         VALUES 
         (1, 'Ivan', '1234', TRUE, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
-        (2, 'Anton', '1234', TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+        (2, 'Anton', $1, TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
         (3, 'Godzilla', '1234', TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE)
         ON CONFLICT DO NOTHING;",
-            &[],
+            &[&constants::TEST_PASSWORD_HASH],
         )
         .await
         .unwrap();
@@ -126,21 +128,38 @@ async fn test_create_new_user() {
     assert_eq!(status, 201)
 }
 
-// #[actix_web::test]
-// async fn test_sign_in() {
-//     let mut app = init_test_service().await;
-//     let request_body = json!({
-//         "username": "keker",
-//         "password": "test",
-//     });
-//     let req = test::TestRequest::post()
-//         .insert_header(header::ContentType::json())
-//         .uri("/api/v1/user/sign_in")
-//         .set_json(request_body)
-//         .to_request();
-//     let mut resp = test::call_service(&mut app, req).await;
-//     let status = resp.status();
-//     let user: User = test::read_body_json(resp).await;
-//     assert_eq!(user.username, "keker");
-//     assert_eq!(status, 201)
-// }
+#[actix_web::test]
+async fn test_sign_in_forbidden() {
+    let mut app = init_test_service().await;
+    let request_body = json!({
+        "username": "keker",
+        "password": "wrong_passord",
+    });
+    let req = test::TestRequest::post()
+        .insert_header(header::ContentType::json())
+        .uri("/api/v1/user/sign_in")
+        .set_json(request_body)
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    assert_eq!(resp.status(), 403)
+}
+
+#[actix_web::test]
+async fn test_sign_in() {
+    let mut app = init_test_service().await;
+    let request_body = json!({
+        "username": "Anton",
+        "password": constants::TEST_PASSWORD,
+    });
+    let req = test::TestRequest::post()
+        .insert_header(header::ContentType::json())
+        .uri("/api/v1/user/sign_in")
+        .set_json(request_body)
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    let signed_info: SingnedInfo = test::read_body_json(resp).await;
+    assert_eq!(status, 200);
+    assert_eq!(signed_info.jwt_token, "test_token");
+    assert_eq!(signed_info.user_id, 2);
+}

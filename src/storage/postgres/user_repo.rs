@@ -1,6 +1,8 @@
+use crate::usecases::user::crypto::SignInVerification;
 use crate::usecases::user::entities::{User, UserForCreation};
-use crate::usecases::user::get_user::{FindUserById, RemoveUserById, RepoError};
-use crate::usecases::user::user_creator::{AccessModelError, CreateUser};
+use crate::usecases::user::errors::AccessModelError;
+use crate::usecases::user::get_user::{FindUserById, RemoveUserById};
+use crate::usecases::user::user_creator::CreateUser;
 use async_trait::async_trait;
 use chrono;
 use deadpool_postgres::Pool;
@@ -18,12 +20,12 @@ impl UserRepo {
 
 #[async_trait]
 impl FindUserById for UserRepo {
-    async fn find_user_by_id(&self, user_id: i32) -> Result<User, RepoError> {
+    async fn find_user_by_id(&self, user_id: i32) -> Result<User, AccessModelError> {
         let client = match self.db_pool.get().await {
             Ok(client) => client,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoTemporaryError);
+                return Err(AccessModelError::TemporaryError);
             }
         };
 
@@ -34,18 +36,18 @@ impl FindUserById for UserRepo {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoFatalError);
+                return Err(AccessModelError::FatalError);
             }
         };
         let rows = match client.query(&stmt, &[&user_id]).await {
             Ok(rows) => rows,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoFatalError);
+                return Err(AccessModelError::FatalError);
             }
         };
         match rows.len() {
-            0 => Err(RepoError::RepoNotFoundError),
+            0 => Err(AccessModelError::NotFoundError),
             _ => Ok(User::new(
                 rows[0].get(0),
                 rows[0].get(1),
@@ -59,27 +61,27 @@ impl FindUserById for UserRepo {
 
 #[async_trait]
 impl RemoveUserById for UserRepo {
-    async fn remove_user_by_id(&self, user_id: i32) -> Result<(), RepoError> {
+    async fn remove_user_by_id(&self, user_id: i32) -> Result<(), AccessModelError> {
         let client = match self.db_pool.get().await {
             Ok(client) => client,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoTemporaryError);
+                return Err(AccessModelError::TemporaryError);
             }
         };
         let stmt = match client.prepare("DELETE FROM users where user_id=$1").await {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoFatalError);
+                return Err(AccessModelError::FatalError);
             }
         };
         let res = match client.execute(&stmt, &[&user_id]).await {
-            Ok(res) if res == 0 => return Err(RepoError::RepoNotFoundError),
+            Ok(res) if res == 0 => return Err(AccessModelError::NotFoundError),
             Ok(_) => Ok(()),
             Err(e) => {
                 error!("{}", e);
-                return Err(RepoError::RepoFatalError);
+                return Err(AccessModelError::FatalError);
             }
         };
         res
@@ -136,5 +138,44 @@ impl CreateUser for UserRepo {
             }
         };
         Ok(user)
+    }
+}
+
+#[async_trait]
+impl SignInVerification for UserRepo {
+    async fn verificate_default(
+        &self,
+        username: &str,
+        hash: &str,
+    ) -> Result<i32, AccessModelError> {
+        let client = match self.db_pool.get().await {
+            Ok(client) => client,
+            Err(e) => {
+                error!("{}", e);
+                return Err(AccessModelError::TemporaryError);
+            }
+        };
+
+        let stmt = match client
+            .prepare("SELECT user_id FROM users where username=$1 AND password_hash=$2")
+            .await
+        {
+            Ok(stmt) => stmt,
+            Err(e) => {
+                error!("{}", e);
+                return Err(AccessModelError::FatalError);
+            }
+        };
+        let rows = match client.query(&stmt, &[&username, &hash]).await {
+            Ok(rows) => rows,
+            Err(e) => {
+                error!("{}", e);
+                return Err(AccessModelError::FatalError);
+            }
+        };
+        match rows.len() {
+            0 => Err(AccessModelError::NotFoundError),
+            _ => Ok(rows[0].get(0)),
+        }
     }
 }
