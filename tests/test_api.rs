@@ -9,7 +9,6 @@ use utils::init_test_service;
 mod constants;
 use constants::TEST_PASSWORD;
 
-const WRONG_JWT_TOKEN: (&str, &str) = ("jwt-token", "i'm wrong");
 
 #[actix_web::test]
 async fn test_get_user() {
