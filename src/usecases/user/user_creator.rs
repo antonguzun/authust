@@ -20,7 +20,7 @@ pub async fn create_new_user(
     let user_data = UserForCreation {
         username: raw_user.username,
         password_hash: hash,
-    }; // TODO implement hashing
+    };
     match user_access_model.save_user_in_storage(user_data).await {
         Ok(user) => Ok(user),
         Err(AccessModelError::TemporaryError) => Err(UserUCError::TemporaryError),

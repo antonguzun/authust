@@ -9,6 +9,8 @@ use utils::init_test_service;
 mod constants;
 use constants::TEST_PASSWORD;
 
+const WRONG_JWT_TOKEN: (&str, &str) = ("jwt-token", "i'm wrong");
+
 #[actix_web::test]
 async fn test_get_user() {
     let mut app = init_test_service().await;
@@ -118,7 +120,7 @@ async fn test_sign_in() {
     assert_eq!(status, 200);
     let signed_info: SingnedInfo = test::read_body_json(resp).await;
     let conf = SecurityConfig {
-        secret_key: "some-secret".to_string(),
+        secret_key: String::from("some-secret"),
         expired_jwt_days: 14,
     };
     let jwt = verificate_jwt(&conf, &signed_info.jwt_token).unwrap();
