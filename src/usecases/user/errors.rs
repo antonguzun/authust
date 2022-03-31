@@ -5,6 +5,7 @@ pub enum UserUCError {
     AlreadyExists,
 }
 
+#[derive(Debug)]
 pub enum SignError {
     FatalError,
     TemporaryError,

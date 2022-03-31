@@ -62,7 +62,7 @@ pub async fn sign_in_user_handler(
     let user_access_model = storage::postgres::user_repo::UserRepo::new(resources.db_pool.clone());
     match crypto::sign_in(
         &user_access_model,
-        &config.secret_key,
+        &config.security_config,
         user_data.into_inner(),
     )
     .await

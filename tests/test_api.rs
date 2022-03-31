@@ -1,4 +1,6 @@
-use actix_web::{http::header, test};
+use actix_web::{http::header, test, web};
+use rust_crud::common::SecurityConfig;
+use rust_crud::usecases::user::crypto::verificate_jwt;
 use rust_crud::usecases::user::entities::{SingnedInfo, User};
 use serde_json::json;
 
@@ -115,6 +117,10 @@ async fn test_sign_in() {
     let status = resp.status();
     assert_eq!(status, 200);
     let signed_info: SingnedInfo = test::read_body_json(resp).await;
-    assert_eq!(signed_info.jwt_token, TEST_JWT);
-    assert_eq!(signed_info.user_id, 2);
+    let conf = SecurityConfig {
+        secret_key: "some-secret".to_string(),
+        expired_jwt_days: 14,
+    };
+    let jwt = verificate_jwt(&conf, &signed_info.jwt_token).unwrap();
+    assert_eq!(jwt.user_id, 2);
 }

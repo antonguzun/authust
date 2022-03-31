@@ -15,10 +15,16 @@ pub struct DbConfig {
 }
 
 #[derive(Clone, Debug)]
+pub struct SecurityConfig {
+    pub secret_key: String,
+    pub expired_jwt_days: u32,
+}
+
+#[derive(Clone, Debug)]
 pub struct Config {
     pub database_config: DbConfig,
+    pub security_config: SecurityConfig,
     pub service_name: String,
-    pub secret_key: String,
 }
 
 impl Config {
@@ -32,8 +38,11 @@ impl Config {
                 dbname: env::var("PG_DBNAME").unwrap(),
                 pool_max_size: env::var("PG_POOL_MAX_SIZE").unwrap().parse().unwrap(),
             },
+            security_config: SecurityConfig {
+                secret_key: env::var("SECRET_KEY").unwrap(),
+                expired_jwt_days: env::var("EXPIRED_JWT_DAYS").unwrap().parse().unwrap(),
+            },
             service_name: env::var("SERVICE_NAME").unwrap(),
-            secret_key: env::var("SECRET_KEY").unwrap(),
         }
     }
 }

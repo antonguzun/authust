@@ -51,3 +51,18 @@ impl SingnedInfo {
         SingnedInfo { user_id, jwt_token }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct JWT {
+    pub user_id: i32,
+    pub expired_at: String,
+}
+
+impl JWT {
+    pub fn new(user_id: i32, expired_at: String) -> JWT {
+        JWT {
+            user_id,
+            expired_at,
+        }
+    }
+}
