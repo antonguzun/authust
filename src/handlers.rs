@@ -1,4 +1,4 @@
-use crate::common::Resources;
+use crate::common::{Config, Resources};
 use crate::storage;
 use crate::usecases::user::entities::InputRawUser;
 use crate::usecases::user::errors::{SignError, UserUCError};
@@ -57,9 +57,16 @@ pub async fn create_user_handler(
 pub async fn sign_in_user_handler(
     user_data: web::Json<InputRawUser>,
     resources: Data<Resources>,
+    config: web::Data<Config>,
 ) -> impl Responder {
     let user_access_model = storage::postgres::user_repo::UserRepo::new(resources.db_pool.clone());
-    match crypto::sign_in(&user_access_model, user_data.into_inner()).await {
+    match crypto::sign_in(
+        &user_access_model,
+        &config.secret_key,
+        user_data.into_inner(),
+    )
+    .await
+    {
         Ok(signed_info) => HttpResponse::Ok().json(signed_info),
         Err(SignError::VerificationError) => HttpResponse::Forbidden().body("Forbidden"),
         Err(_) => {

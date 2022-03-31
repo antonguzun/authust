@@ -18,6 +18,7 @@ pub struct DbConfig {
 pub struct Config {
     pub database_config: DbConfig,
     pub service_name: String,
+    pub secret_key: String,
 }
 
 impl Config {
@@ -32,6 +33,7 @@ impl Config {
                 pool_max_size: env::var("PG_POOL_MAX_SIZE").unwrap().parse().unwrap(),
             },
             service_name: env::var("SERVICE_NAME").unwrap(),
+            secret_key: env::var("SECRET_KEY").unwrap(),
         }
     }
 }

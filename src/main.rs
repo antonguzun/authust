@@ -9,7 +9,7 @@ extern crate env_logger;
 pub fn run_server(resources: Resources, config: Config) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(move || {
         App::new()
-            .app_data(config.clone())
+            .app_data(web::Data::new(config.clone()))
             .data(resources.clone())
             .service(web::scope("/api/v1").configure(init_api_v1))
     })

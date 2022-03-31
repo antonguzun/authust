@@ -7,6 +7,7 @@ use rust_crud::common::{Config, Resources};
 use std::fs;
 
 #[path = "./constants.rs"]
+//надо разобраться почему он сам не подхватывает модуль, хотя в соседнем файле таких проблем нет
 mod constants;
 
 async fn refresh_db(resources: &Resources) -> () {
@@ -43,7 +44,7 @@ pub async fn init_test_service(
     refresh_db(&resources).await;
     test::init_service(
         App::new()
-            .app_data(config.clone())
+            .app_data(web::Data::new(config.clone()))
             .data(resources.clone())
             .service(web::scope("/api/v1").configure(init_api_v1)),
     )

@@ -5,7 +5,7 @@ use serde_json::json;
 mod utils;
 use utils::init_test_service;
 mod constants;
-use constants::TEST_PASSWORD;
+use constants::{TEST_JWT, TEST_PASSWORD};
 
 #[actix_web::test]
 async fn test_get_user() {
@@ -113,8 +113,8 @@ async fn test_sign_in() {
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
-    let signed_info: SingnedInfo = test::read_body_json(resp).await;
     assert_eq!(status, 200);
-    assert_eq!(signed_info.jwt_token, "test_token");
+    let signed_info: SingnedInfo = test::read_body_json(resp).await;
+    assert_eq!(signed_info.jwt_token, TEST_JWT);
     assert_eq!(signed_info.user_id, 2);
 }
