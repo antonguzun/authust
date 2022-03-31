@@ -18,6 +18,18 @@ impl UserRepo {
     }
 }
 
+const GET_BY_ID_QUERY: &str = "SELECT user_id, username, enabled, created_at, updated_at 
+                                FROM users 
+                                WHERE user_id=$1 AND is_deleted=FALSE";
+const DELETE_BY_ID_QUERY: &str =
+    "UPDATE users SET is_deleted=TRUE, updated_at=$1 WHERE user_id=$2 AND is_deleted=FALSE";
+const INSERT_USER_QUERY: &str = "INSERT INTO users 
+                                (username, password_hash, enabled, created_at, updated_at, is_deleted)
+                                VALUES ($1, $2, $3, $4, $5, $6) 
+                                RETURNING user_id, username, enabled, created_at, updated_at";
+const FIND_USER_BY_VERIFICATION: &str =
+    "SELECT user_id FROM users WHERE username=$1 AND password_hash=$2 AND is_deleted=FALSE";
+
 #[async_trait]
 impl FindUserById for UserRepo {
     async fn find_user_by_id(&self, user_id: i32) -> Result<User, AccessModelError> {
@@ -29,10 +41,7 @@ impl FindUserById for UserRepo {
             }
         };
 
-        let stmt = match client
-            .prepare("SELECT user_id, username, enabled, created_at, updated_at FROM users where user_id=$1")
-            .await
-        {
+        let stmt = match client.prepare(GET_BY_ID_QUERY).await {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("{}", e);
@@ -69,14 +78,15 @@ impl RemoveUserById for UserRepo {
                 return Err(AccessModelError::TemporaryError);
             }
         };
-        let stmt = match client.prepare("DELETE FROM users where user_id=$1").await {
+        let stmt = match client.prepare(DELETE_BY_ID_QUERY).await {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("{}", e);
                 return Err(AccessModelError::FatalError);
             }
         };
-        let res = match client.execute(&stmt, &[&user_id]).await {
+        let now = chrono::Utc::now();
+        let res = match client.execute(&stmt, &[&now, &user_id]).await {
             Ok(res) if res == 0 => return Err(AccessModelError::NotFoundError),
             Ok(_) => Ok(()),
             Err(e) => {
@@ -98,9 +108,7 @@ impl CreateUser for UserRepo {
                 return Err(AccessModelError::TemporaryError);
             }
         };
-        let query = "INSERT INTO users (username, password_hash, enabled, created_at, updated_at, is_deleted)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id, username, enabled, created_at, updated_at";
-        let stmt = match client.prepare(query).await {
+        let stmt = match client.prepare(INSERT_USER_QUERY).await {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("{}", e);
@@ -156,10 +164,7 @@ impl SignInVerification for UserRepo {
             }
         };
 
-        let stmt = match client
-            .prepare("SELECT user_id FROM users where username=$1 AND password_hash=$2")
-            .await
-        {
+        let stmt = match client.prepare(FIND_USER_BY_VERIFICATION).await {
             Ok(stmt) => stmt,
             Err(e) => {
                 error!("{}", e);

@@ -1,13 +1,13 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
     pub user_id: i32,
     pub username: String,
     pub enabled: bool,
-    pub created_at: SystemTime,
-    pub updated_at: SystemTime,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -27,15 +27,15 @@ impl User {
         user_id: i32,
         username: String,
         enabled: bool,
-        created_at: SystemTime,
-        updated_at: SystemTime,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
     ) -> User {
         User {
             user_id,
             username,
             enabled,
-            created_at,
-            updated_at,
+            created_at: created_at.to_rfc3339(),
+            updated_at: updated_at.to_rfc3339(),
         }
     }
 }

@@ -9,7 +9,6 @@ use utils::init_test_service;
 mod constants;
 use constants::TEST_PASSWORD;
 
-
 #[actix_web::test]
 async fn test_get_user() {
     let mut app = init_test_service().await;
