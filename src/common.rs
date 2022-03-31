@@ -31,18 +31,27 @@ impl Config {
     pub fn create_config() -> Config {
         Config {
             database_config: DbConfig {
-                user: env::var("PG_USER").unwrap(),
-                password: env::var("PG_PASSWORD").unwrap(),
-                host: env::var("PG_HOST").unwrap(),
-                port: env::var("PG_PORT").unwrap().parse().unwrap(),
-                dbname: env::var("PG_DBNAME").unwrap(),
-                pool_max_size: env::var("PG_POOL_MAX_SIZE").unwrap().parse().unwrap(),
+                user: env::var("PG_USER").expect("Expected env param PG_USER"),
+                password: env::var("PG_PASSWORD").expect("Expected env param PG_PASSWORD"),
+                host: env::var("PG_HOST").expect("Expected env param PG_HOST"),
+                port: env::var("PG_PORT")
+                    .expect("Expected env param PG_PORT")
+                    .parse()
+                    .expect("Wrong env param PG_PORT"),
+                dbname: env::var("PG_DBNAME").expect("Expected env param PG_DBNAME"),
+                pool_max_size: env::var("PG_POOL_MAX_SIZE")
+                    .expect("Expected env param PG_POOL_MAX_SIZE")
+                    .parse()
+                    .expect("Wrong env param PG_POOL_MAX_SIZE"),
             },
             security_config: SecurityConfig {
-                secret_key: env::var("SECRET_KEY").unwrap(),
-                expired_jwt_days: env::var("EXPIRED_JWT_DAYS").unwrap().parse().unwrap(),
+                secret_key: env::var("SECRET_KEY").expect("Expected env param SECRET_KEY"),
+                expired_jwt_days: env::var("EXPIRED_JWT_DAYS")
+                    .expect("Expected env param EXPIRED_JWT_DAYS")
+                    .parse()
+                    .expect("Wrong env param EXPIRED_JWT_DAYS"),
             },
-            service_name: env::var("SERVICE_NAME").unwrap(),
+            service_name: env::var("SERVICE_NAME").expect("Expected env param SERVICE_NAME"),
         }
     }
 }
@@ -74,7 +83,6 @@ fn create_pool(config: &Config) -> Pool {
     let pool = Pool::builder(mgr)
         .max_size(config.database_config.pool_max_size)
         .build()
-        .unwrap();
-
+        .expect("Building postgres pool failured");
     pool
 }
