@@ -57,7 +57,7 @@ pub async fn create_user_handler(
 pub async fn sign_in_user_handler(
     user_data: web::Json<InputRawUser>,
     resources: Data<Resources>,
-    config: web::Data<Config>,
+    config: Data<Config>,
 ) -> impl Responder {
     let user_access_model = storage::postgres::user_repo::UserRepo::new(resources.db_pool.clone());
     match crypto::sign_in(
