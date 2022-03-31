@@ -1,4 +1,4 @@
-use actix_web::{http::header, test, web};
+use actix_web::{http::header, test};
 use rust_crud::common::SecurityConfig;
 use rust_crud::usecases::user::crypto::verificate_jwt;
 use rust_crud::usecases::user::entities::{SingnedInfo, User};
@@ -7,7 +7,7 @@ use serde_json::json;
 mod utils;
 use utils::init_test_service;
 mod constants;
-use constants::{TEST_JWT, TEST_PASSWORD};
+use constants::TEST_PASSWORD;
 
 #[actix_web::test]
 async fn test_get_user() {
