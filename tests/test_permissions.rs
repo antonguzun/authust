@@ -26,12 +26,52 @@ async fn test_create_new_permission() {
 }
 
 #[actix_web::test]
-async fn test_delete_new_permission() {
+async fn test_get_permission() {
     let mut app = init_test_service().await;
+    let req = test::TestRequest::get()
+        .uri("/api/v1/permissions/1/")
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let permission: PermissionView = test::read_body_json(resp).await;
+    assert_eq!(permission.permission_name, "PERM_1");
+    assert_eq!(permission.is_deleted, false);
+}
+
+#[actix_web::test]
+async fn test_delete_permission() {
+    let mut app = init_test_service().await;
+
+    // check initial row state in db
+    let req = test::TestRequest::get()
+        .uri("/api/v1/permissions/1/")
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let permission: PermissionView = test::read_body_json(resp).await;
+    assert_eq!(permission.permission_name, "PERM_1");
+    assert_eq!(permission.is_deleted, false);
+    assert_eq!(permission.created_at, permission.updated_at);
+
+    // delete
     let req = test::TestRequest::delete()
         .uri("/api/v1/permissions/1/")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 204);
+
+    // check row updated in db
+    let req = test::TestRequest::get()
+        .uri("/api/v1/permissions/1/")
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let permission: PermissionView = test::read_body_json(resp).await;
+    assert_eq!(permission.permission_name, "PERM_1");
+    assert_eq!(permission.is_deleted, true);
+    assert_ne!(permission.created_at, permission.updated_at);
 }

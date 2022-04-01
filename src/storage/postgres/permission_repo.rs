@@ -1,8 +1,7 @@
-use crate::usecases::permission::entities::{
-    Permission, PermissionForCreation, PermissionForDisabling,
-};
+use crate::usecases::permission::entities::{Permission, PermissionForCreation};
 use crate::usecases::permission::permission_creator::CreatePermission;
 use crate::usecases::permission::permission_disabler::DisablePermission;
+use crate::usecases::permission::permission_get_item::GetPermission;
 use crate::usecases::user::errors::AccessModelError;
 use async_trait::async_trait;
 use chrono;
@@ -23,7 +22,7 @@ impl PermissionRepo {
 const GET_BY_ID_QUERY: &str =
     "SELECT permission_id, permission_name, created_at, updated_at, is_deleted 
                                 FROM permissions 
-                                WHERE permission_name=$1";
+                                WHERE permission_id=$1";
 const INSERT_PERMISSION_QUERY: &str = "INSERT INTO permissions (permission_name, created_at, updated_at, is_deleted) VALUES ($1, $2, $3, $4) RETURNING permission_id, permission_name, created_at, updated_at, is_deleted";
 const DISABLE_PERMISSION_BY_ID_QUERY: &str = "UPDATE permissions SET is_deleted=TRUE, updated_at=$1 WHERE permission_id=$2 AND is_deleted=FALSE";
 
@@ -77,21 +76,39 @@ impl CreatePermission for PermissionRepo {
         }
     }
 }
+#[async_trait]
+impl GetPermission for PermissionRepo {
+    async fn get_permission_by_id(
+        &self,
+        permission_id: i32,
+    ) -> Result<Permission, AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, GET_BY_ID_QUERY).await?;
+        match client.query(&stmt, &[&permission_id]).await {
+            Ok(rows) if rows.len() == 1 => Ok(Permission::from_sql_result(&rows[0])),
+            Ok(_) => {
+                error!("During creation permission got count of retirning rows not equals one");
+                Err(AccessModelError::FatalError)
+            }
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+}
 
 #[async_trait]
 impl DisablePermission for PermissionRepo {
     async fn disable_permission_in_storage(
         &self,
-        perm_data: PermissionForDisabling,
+        permission_id: i32,
     ) -> Result<(), AccessModelError> {
         let client = get_client(&self.db_pool).await?;
         let stmt = prepare_stmt(&client, DISABLE_PERMISSION_BY_ID_QUERY).await?;
 
         let now = chrono::Utc::now();
-        match client
-            .execute(&stmt, &[&now, &perm_data.permission_id])
-            .await
-        {
+        match client.execute(&stmt, &[&now, &permission_id]).await {
             Ok(res) if res != 0 => Ok(()),
             Ok(_) => Err(AccessModelError::NotFoundError),
             Err(e) => {
