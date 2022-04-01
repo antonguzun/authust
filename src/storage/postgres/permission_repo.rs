@@ -1,5 +1,8 @@
-use crate::usecases::permission::entities::{Permission, PermissionForCreation};
+use crate::usecases::permission::entities::{
+    Permission, PermissionForCreation, PermissionForDisabling,
+};
 use crate::usecases::permission::permission_creator::CreatePermission;
+use crate::usecases::permission::permission_disabler::DisablePermission;
 use crate::usecases::user::errors::AccessModelError;
 use async_trait::async_trait;
 use chrono;
@@ -22,6 +25,7 @@ const GET_BY_ID_QUERY: &str =
                                 FROM permissions 
                                 WHERE permission_name=$1";
 const INSERT_PERMISSION_QUERY: &str = "INSERT INTO permissions (permission_name, created_at, updated_at, is_deleted) VALUES ($1, $2, $3, $4) RETURNING permission_id, permission_name, created_at, updated_at, is_deleted";
+const DISABLE_PERMISSION_BY_ID_QUERY: &str = "UPDATE permissions SET is_deleted=TRUE, updated_at=$1 WHERE permission_id=$2 AND is_deleted=FALSE";
 
 async fn get_client(db_pool: &Pool) -> Result<Client, AccessModelError> {
     match db_pool.get().await {
@@ -66,6 +70,30 @@ impl CreatePermission for PermissionRepo {
                 error!("During creation permission got count of retirning rows not equals one");
                 Err(AccessModelError::FatalError)
             }
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl DisablePermission for PermissionRepo {
+    async fn disable_permission_in_storage(
+        &self,
+        perm_data: PermissionForDisabling,
+    ) -> Result<(), AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, DISABLE_PERMISSION_BY_ID_QUERY).await?;
+
+        let now = chrono::Utc::now();
+        match client
+            .execute(&stmt, &[&now, &perm_data.permission_id])
+            .await
+        {
+            Ok(res) if res != 0 => Ok(()),
+            Ok(_) => Err(AccessModelError::NotFoundError),
             Err(e) => {
                 error!("{}", e);
                 Err(AccessModelError::FatalError)

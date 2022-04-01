@@ -32,3 +32,14 @@ impl Permission {
 pub struct PermissionForCreation {
     pub permission_name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct PermissionForDisabling {
+    pub permission_id: i32,
+}
+
+impl PermissionForDisabling {
+    pub fn new(permission_id: i32) -> PermissionForDisabling {
+        PermissionForDisabling { permission_id }
+    }
+}

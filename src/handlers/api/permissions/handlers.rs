@@ -1,8 +1,10 @@
 use crate::common::Resources;
 use crate::handlers::api::permissions::views::PermissionView;
 use crate::storage::postgres::permission_repo::PermissionRepo;
-use crate::usecases::permission::entities::PermissionForCreation;
+use crate::usecases::permission::entities::{PermissionForCreation, PermissionForDisabling};
 use crate::usecases::permission::permission_creator::create_new_permission;
+use crate::usecases::permission::permission_disabler::disable_permission_by_id;
+use crate::usecases::user::errors::UserUCError;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 
@@ -14,6 +16,27 @@ pub async fn create_permission_handler(
     let permission_access_model = PermissionRepo::new(resources.db_pool.clone());
     match create_new_permission(&permission_access_model, perm_data.into_inner()).await {
         Ok(permission) => HttpResponse::Created().json(PermissionView::new(permission)),
+        Err(_) => {
+            error!("usecase error");
+            HttpResponse::InternalServerError().body("internal error")
+        }
+    }
+}
+
+#[delete("permissions/{perm_id}/")]
+pub async fn disable_permission_handler(
+    perm_id: web::Path<i32>,
+    resources: web::Data<Resources>,
+) -> impl Responder {
+    let permission_id = perm_id.into_inner();
+    let permission_access_model = PermissionRepo::new(resources.db_pool.clone());
+    match disable_permission_by_id(
+        &permission_access_model,
+        PermissionForDisabling::new(permission_id),
+    )
+    .await
+    {
+        Ok(_) | Err(UserUCError::NotFoundError) => HttpResponse::NoContent().body(""),
         Err(_) => {
             error!("usecase error");
             HttpResponse::InternalServerError().body("internal error")

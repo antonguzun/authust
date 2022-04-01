@@ -41,6 +41,19 @@ async fn refresh_db(resources: &Resources) -> () {
         )
         .await
         .unwrap();
+
+    client
+        .query(
+            "INSERT INTO permissions (permission_id, permission_name, created_at, updated_at, is_deleted)
+        VALUES 
+        (1, 'PERM_1', '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+        (2, 'PERM_2', '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+        (3, 'PERM_3', '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', TRUE)
+        ON CONFLICT DO NOTHING;",
+            &[],
+        )
+        .await
+        .unwrap();
 }
 
 pub async fn init_test_service(
