@@ -42,6 +42,13 @@ async fn test_get_permission() {
 #[actix_web::test]
 async fn test_delete_permission() {
     let mut app = init_test_service().await;
+    // delete row wich not existed
+    let req = test::TestRequest::delete()
+        .uri("/api/v1/permissions/9999/")
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 204);
 
     // check initial row state in db
     let req = test::TestRequest::get()
@@ -56,6 +63,13 @@ async fn test_delete_permission() {
     assert_eq!(permission.created_at, permission.updated_at);
 
     // delete
+    let req = test::TestRequest::delete()
+        .uri("/api/v1/permissions/1/")
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 204);
+    // delete again
     let req = test::TestRequest::delete()
         .uri("/api/v1/permissions/1/")
         .to_request();
