@@ -1,13 +1,7 @@
-use crate::usecases::user::crypto::SignInVerification;
-use crate::usecases::user::entities::{User, UserForCreation};
 use crate::usecases::user::errors::AccessModelError;
-use crate::usecases::user::get_user::{FindUserById, RemoveUserById};
-use crate::usecases::user::user_creator::CreateUser;
-use async_trait::async_trait;
-use chrono;
 use deadpool_postgres::{Client, Pool};
 use log::error;
-use tokio_postgres::{Row, Statement};
+use tokio_postgres::Statement;
 
 const READY_QUERY: &str = "SELECT 1";
 

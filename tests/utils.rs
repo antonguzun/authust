@@ -18,10 +18,16 @@ async fn refresh_db(resources: &Resources) -> () {
     for path in migration_paths {
         let filename = path.unwrap().path().display().to_string();
         let query = &fs::read_to_string(&filename).unwrap();
-        client.query(query, &[]).await.unwrap();
+        client.batch_execute(query).await.unwrap();
     }
 
-    client.query("TRUNCATE TABLE users;", &[]).await.unwrap();
+    client
+        .query(
+            "TRUNCATE TABLE users, permissions, groups, group_permissions;",
+            &[],
+        )
+        .await
+        .unwrap();
     client
         .query(
             "INSERT INTO users 
