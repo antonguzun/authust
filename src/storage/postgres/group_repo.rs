@@ -1,6 +1,8 @@
-use crate::usecases::group::entities::Group;
+use crate::usecases::group::entities::{Group, GroupForCreation};
 use crate::usecases::group::errors::AccessModelError;
+use crate::usecases::group::group_creator::CreateGroup;
 use crate::usecases::group::group_get_item::GetGroup;
+use actix_web::http::header::Accept;
 use async_trait::async_trait;
 use chrono;
 use deadpool_postgres::{Client, Pool};
@@ -20,6 +22,7 @@ impl GroupRepo {
 const GET_BY_ID_QUERY: &str = "SELECT group_id, group_name, created_at, updated_at, is_deleted 
                                 FROM groups 
                                 WHERE group_id=$1";
+const INSERT_GROUP_QUERY: &str = "INSERT INTO groups (group_name, created_at, updated_at, is_deleted) VALUES ($1, $2, $3, $4) RETURNING group_id, group_name, created_at, updated_at, is_deleted";
 
 async fn get_client(db_pool: &Pool) -> Result<Client, AccessModelError> {
     match db_pool.get().await {
@@ -55,6 +58,31 @@ impl GetGroup for GroupRepo {
             Ok(rows) if rows.len() == 1 => Ok(Group::from_sql_result(&rows[0])),
             Ok(_) => {
                 error!("During getting group count of retirning rows not equals one");
+                Err(AccessModelError::FatalError)
+            }
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+}
+#[async_trait]
+impl CreateGroup for GroupRepo {
+    async fn save_group_in_storage(
+        &self,
+        group_data: GroupForCreation,
+    ) -> Result<Group, AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, INSERT_GROUP_QUERY).await?;
+        let now = chrono::Utc::now();
+        match client
+            .query(&stmt, &[&group_data.group_name, &now, &now, &false])
+            .await
+        {
+            Ok(rows) if rows.len() == 1 => Ok(Group::from_sql_result(&rows[0])),
+            Ok(_) => {
+                error!("During creation group got count of retirning rows not equals one");
                 Err(AccessModelError::FatalError)
             }
             Err(e) => {

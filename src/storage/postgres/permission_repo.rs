@@ -52,18 +52,14 @@ impl Permission {
     }
 }
 #[async_trait]
-impl CreatePermission for PermissionRepo {
-    async fn save_permission_in_storage(
+impl GetPermission for PermissionRepo {
+    async fn get_permission_by_id(
         &self,
-        perm_data: PermissionForCreation,
+        permission_id: i32,
     ) -> Result<Permission, AccessModelError> {
         let client = get_client(&self.db_pool).await?;
-        let stmt = prepare_stmt(&client, INSERT_PERMISSION_QUERY).await?;
-        let now = chrono::Utc::now();
-        match client
-            .query(&stmt, &[&perm_data.permission_name, &now, &now, &false])
-            .await
-        {
+        let stmt = prepare_stmt(&client, GET_BY_ID_QUERY).await?;
+        match client.query(&stmt, &[&permission_id]).await {
             Ok(rows) if rows.len() == 1 => Ok(Permission::from_sql_result(&rows[0])),
             Ok(_) => {
                 error!("During creation permission got count of retirning rows not equals one");
@@ -77,14 +73,18 @@ impl CreatePermission for PermissionRepo {
     }
 }
 #[async_trait]
-impl GetPermission for PermissionRepo {
-    async fn get_permission_by_id(
+impl CreatePermission for PermissionRepo {
+    async fn save_permission_in_storage(
         &self,
-        permission_id: i32,
+        perm_data: PermissionForCreation,
     ) -> Result<Permission, AccessModelError> {
         let client = get_client(&self.db_pool).await?;
-        let stmt = prepare_stmt(&client, GET_BY_ID_QUERY).await?;
-        match client.query(&stmt, &[&permission_id]).await {
+        let stmt = prepare_stmt(&client, INSERT_PERMISSION_QUERY).await?;
+        let now = chrono::Utc::now();
+        match client
+            .query(&stmt, &[&perm_data.permission_name, &now, &now, &false])
+            .await
+        {
             Ok(rows) if rows.len() == 1 => Ok(Permission::from_sql_result(&rows[0])),
             Ok(_) => {
                 error!("During creation permission got count of retirning rows not equals one");

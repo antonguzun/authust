@@ -1,4 +1,4 @@
-use crate::handlers::api::groups::handlers::get_group_handler;
+use crate::handlers::api::groups::handlers::{create_group_handler, get_group_handler};
 use crate::handlers::api::permissions::handlers::{
     create_permission_handler, disable_permission_handler, get_permission_handler,
 };
@@ -7,17 +7,18 @@ use crate::handlers::api::users::{
 };
 use crate::handlers::system::handlers::{ping_handler, ready_handler};
 
-use actix_web::web;
+use actix_web::web::{self, service};
 
 pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(get_user_by_id)
-        .service(delete_user_by_id)
         .service(create_user_handler)
+        .service(delete_user_by_id)
         .service(sign_in_user_handler)
+        .service(get_permission_handler)
         .service(create_permission_handler)
         .service(disable_permission_handler)
-        .service(get_permission_handler)
-        .service(get_group_handler);
+        .service(get_group_handler)
+        .service(create_group_handler);
 }
 
 pub fn init_system(cfg: &mut web::ServiceConfig) {
