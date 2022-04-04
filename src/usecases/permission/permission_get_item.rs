@@ -1,5 +1,5 @@
 use crate::usecases::permission::entities::Permission;
-use crate::usecases::user::errors::{AccessModelError, UserUCError};
+use crate::usecases::permission::errors::{AccessModelError, PermissionUCError};
 
 use async_trait::async_trait;
 
@@ -14,14 +14,14 @@ pub trait GetPermission {
 pub async fn get_permission_by_id(
     permission_access_model: &impl GetPermission,
     permission_id: i32,
-) -> Result<Permission, UserUCError> {
+) -> Result<Permission, PermissionUCError> {
     match permission_access_model
         .get_permission_by_id(permission_id)
         .await
     {
         Ok(permission) => Ok(permission),
-        Err(AccessModelError::NotFoundError) => Err(UserUCError::NotFoundError),
-        Err(AccessModelError::TemporaryError) => Err(UserUCError::TemporaryError),
-        Err(_) => Err(UserUCError::FatalError),
+        Err(AccessModelError::NotFoundError) => Err(PermissionUCError::NotFoundError),
+        Err(AccessModelError::TemporaryError) => Err(PermissionUCError::TemporaryError),
+        Err(_) => Err(PermissionUCError::FatalError),
     }
 }

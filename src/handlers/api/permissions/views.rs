@@ -1,4 +1,4 @@
-use crate::usecases::permission::entities::{Permission, PermissionForCreation};
+use crate::usecases::permission::entities::Permission;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
