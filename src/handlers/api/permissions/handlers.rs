@@ -2,10 +2,10 @@ use crate::common::Resources;
 use crate::handlers::api::permissions::views::PermissionView;
 use crate::storage::postgres::permission_repo::PermissionRepo;
 use crate::usecases::permission::entities::PermissionForCreation;
+use crate::usecases::permission::errors::PermissionUCError;
 use crate::usecases::permission::permission_creator::create_new_permission;
 use crate::usecases::permission::permission_disabler::disable_permission_by_id;
 use crate::usecases::permission::permission_get_item::get_permission_by_id;
-use crate::usecases::permission::errors::PermissionUCError;
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 

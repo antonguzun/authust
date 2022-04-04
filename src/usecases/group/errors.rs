@@ -1,4 +1,4 @@
-pub enum PermissionUCError {
+pub enum GroupUCError {
     FatalError,
     TemporaryError,
     NotFoundError,

@@ -54,6 +54,18 @@ async fn refresh_db(resources: &Resources) -> () {
         )
         .await
         .unwrap();
+    client
+        .query(
+            "INSERT INTO groups (group_id, group_name, created_at, updated_at, is_deleted)
+        VALUES 
+        (1, 'GROUP_1', '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+        (2, 'GROUP_2', '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+        (3, 'GROUP_3', '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', TRUE)
+        ON CONFLICT DO NOTHING;",
+            &[],
+        )
+        .await
+        .unwrap();
 }
 
 pub async fn init_test_service(

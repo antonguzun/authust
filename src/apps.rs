@@ -1,3 +1,4 @@
+use crate::handlers::api::groups::handlers::get_group_handler;
 use crate::handlers::api::permissions::handlers::{
     create_permission_handler, disable_permission_handler, get_permission_handler,
 };
@@ -15,7 +16,8 @@ pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
         .service(sign_in_user_handler)
         .service(create_permission_handler)
         .service(disable_permission_handler)
-        .service(get_permission_handler);
+        .service(get_permission_handler)
+        .service(get_group_handler);
 }
 
 pub fn init_system(cfg: &mut web::ServiceConfig) {

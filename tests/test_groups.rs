@@ -6,7 +6,6 @@ mod utils;
 use utils::init_test_service;
 mod constants;
 
-
 #[actix_web::test]
 async fn test_get_group() {
     let mut app = init_test_service().await;
