@@ -21,10 +21,15 @@ impl PermissionRepo {
 
 const GET_BY_ID_QUERY: &str =
     "SELECT permission_id, permission_name, created_at, updated_at, is_deleted 
-                                FROM permissions 
-                                WHERE permission_id=$1";
-const INSERT_PERMISSION_QUERY: &str = "INSERT INTO permissions (permission_name, created_at, updated_at, is_deleted) VALUES ($1, $2, $3, $4) RETURNING permission_id, permission_name, created_at, updated_at, is_deleted";
-const DISABLE_PERMISSION_BY_ID_QUERY: &str = "UPDATE permissions SET is_deleted=TRUE, updated_at=$1 WHERE permission_id=$2 AND is_deleted=FALSE";
+     FROM permissions 
+     WHERE permission_id=$1";
+const INSERT_PERMISSION_QUERY: &str =
+    "INSERT INTO permissions (permission_name, created_at, updated_at, is_deleted) 
+    VALUES ($1, $2, $3, $4) 
+    RETURNING permission_id, permission_name, created_at, updated_at, is_deleted";
+const DISABLE_PERMISSION_BY_ID_QUERY: &str = "UPDATE permissions 
+    SET is_deleted=TRUE, updated_at=$1 
+    WHERE permission_id=$2 AND is_deleted=FALSE";
 
 async fn get_client(db_pool: &Pool) -> Result<Client, AccessModelError> {
     match db_pool.get().await {
