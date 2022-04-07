@@ -89,3 +89,19 @@ async fn test_delete_permission() {
     assert_eq!(permission.is_deleted, true);
     assert_ne!(permission.created_at, permission.updated_at);
 }
+
+#[actix_web::test]
+async fn test_get_permissions_listing() {
+    let mut app = init_test_service().await;
+    let req = test::TestRequest::get()
+        .uri("/api/v1/permissions?group_id=1&is_deleted=false&limit=10&offset=0")
+        // .uri("/api/v1/permissions")
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    let temp = test::read_body(resp).await;
+    assert_eq!(status, 200);
+    // let permissions: Vec<PermissionView> = test::read_body_json(resp).await;
+    // assert_eq!(permissions[0].permission_name, "PERM_1");
+    // assert_eq!(permissions[0].is_deleted, false);
+}

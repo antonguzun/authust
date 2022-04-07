@@ -89,3 +89,23 @@ async fn test_delete_group() {
     assert_eq!(group.is_deleted, true);
     assert_ne!(group.created_at, group.updated_at);
 }
+
+// #[actix_web::test]
+// async fn test_bind_permission_with_group() {
+//     let mut app = init_test_service().await;
+//     let request_body = json!({
+//         "group_id": 1,
+//         "permission_id": 2
+//     });
+//     let req = test::TestRequest::post()
+//         .insert_header(header::ContentType::json())
+//         .uri("/api/v1/groups/bind_permisson/")
+//         .set_json(request_body)
+//         .to_request();
+//     let resp = test::call_service(&mut app, req).await;
+//     let status = resp.status();
+//     assert_eq!(status, 200);
+//     let group: GroupView = test::read_body_json(resp).await;
+//     assert_eq!(group.group_name, "GROUP_1");
+//     assert_eq!(group.is_deleted, false);
+// }

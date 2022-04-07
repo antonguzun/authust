@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::clone::Clone;
 
 #[derive(Serialize, Deserialize)]
 pub struct Permission {
@@ -28,7 +29,17 @@ impl Permission {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 pub struct PermissionForCreation {
     pub permission_name: String,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct PermissionsFilters {
+    pub permission_id: Option<i32>,
+    pub group_id: Option<i32>,
+    pub is_deleted: Option<bool>,
+    pub permission_name: Option<String>,
+    pub offset: Option<i64>,
+    pub limit: Option<i64>,
 }
