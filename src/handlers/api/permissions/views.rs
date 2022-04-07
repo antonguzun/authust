@@ -21,3 +21,13 @@ impl PermissionView {
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct PermissionListingView {
+    pub permissions: Vec<Permission>,
+}
+impl PermissionListingView {
+    pub fn new(permissions: Vec<Permission>) -> PermissionListingView {
+        PermissionListingView { permissions }
+    }
+}

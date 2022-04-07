@@ -12,7 +12,7 @@ use constants::TEST_PASSWORD;
 #[actix_web::test]
 async fn test_get_user() {
     let mut app = init_test_service().await;
-    let req = test::TestRequest::get().uri("/api/v1/user/1/").to_request();
+    let req = test::TestRequest::get().uri("/api/v1/users/1").to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 200)
 }
@@ -21,7 +21,7 @@ async fn test_get_user() {
 async fn test_get_user_not_found() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::get()
-        .uri("/api/v1/user/999991/")
+        .uri("/api/v1/users/999991")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
@@ -31,7 +31,7 @@ async fn test_get_user_not_found() {
 async fn test_get_user_wrong_params() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::get()
-        .uri("/api/v1/user/sadf/")
+        .uri("/api/v1/users/sadf")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
@@ -41,17 +41,17 @@ async fn test_get_user_wrong_params() {
 async fn test_delete_user() {
     let mut app = init_test_service().await;
 
-    let req = test::TestRequest::get().uri("/api/v1/user/3/").to_request();
+    let req = test::TestRequest::get().uri("/api/v1/users/3").to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 200);
 
     let req = test::TestRequest::delete()
-        .uri("/api/v1/user/3/")
+        .uri("/api/v1/users/3")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 204);
 
-    let req = test::TestRequest::get().uri("/api/v1/user/3/").to_request();
+    let req = test::TestRequest::get().uri("/api/v1/users/3").to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
 }
@@ -60,7 +60,7 @@ async fn test_delete_user() {
 async fn test_delete_user_what_doesnt_exist() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::delete()
-        .uri("/api/v1/user/999/")
+        .uri("/api/v1/users/999")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 204)
@@ -75,7 +75,7 @@ async fn test_create_new_user() {
     });
     let req = test::TestRequest::post()
         .insert_header(header::ContentType::json())
-        .uri("/api/v1/user/")
+        .uri("/api/v1/users")
         .set_json(request_body)
         .to_request();
     let resp = test::call_service(&mut app, req).await;
@@ -94,7 +94,7 @@ async fn test_sign_in_forbidden() {
     });
     let req = test::TestRequest::post()
         .insert_header(header::ContentType::json())
-        .uri("/api/v1/user/sign_in/")
+        .uri("/api/v1/users/sign_in")
         .set_json(request_body)
         .to_request();
     let resp = test::call_service(&mut app, req).await;
@@ -110,7 +110,7 @@ async fn test_sign_in() {
     });
     let req = test::TestRequest::post()
         .insert_header(header::ContentType::json())
-        .uri("/api/v1/user/sign_in/")
+        .uri("/api/v1/users/sign_in")
         .set_json(request_body)
         .to_request();
     let resp = test::call_service(&mut app, req).await;

@@ -1,5 +1,5 @@
 use crate::common::Resources;
-use crate::handlers::api::permissions::views::PermissionView;
+use crate::handlers::api::permissions::views::{PermissionListingView, PermissionView};
 use crate::storage::postgres::permission_repo::PermissionRepo;
 use crate::usecases::permission::entities::{PermissionForCreation, PermissionsFilters};
 use crate::usecases::permission::errors::PermissionUCError;
@@ -10,7 +10,7 @@ use crate::usecases::permission::permission_get_list::get_permissions_by_filters
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 
-#[get("permissions/{perm_id}/")]
+#[get("permissions/{perm_id}")]
 pub async fn get_permission_handler(
     permission_id: web::Path<i32>,
     resources: web::Data<Resources>,
@@ -32,7 +32,7 @@ pub async fn permissions_listing_handler(
 ) -> impl Responder {
     let permission_access_model = PermissionRepo::new(resources.db_pool.clone());
     match get_permissions_by_filters(&permission_access_model, filters.into_inner()).await {
-        Ok(permissions) => HttpResponse::Ok().json(permissions),
+        Ok(permissions) => HttpResponse::Ok().json(PermissionListingView::new(permissions)),
         Err(_) => {
             error!("usecase error");
             HttpResponse::InternalServerError().body("internal error")
@@ -55,7 +55,7 @@ pub async fn create_permission_handler(
     }
 }
 
-#[delete("permissions/{perm_id}/")]
+#[delete("permissions/{perm_id}")]
 pub async fn disable_permission_handler(
     permission_id: web::Path<i32>,
     resources: web::Data<Resources>,

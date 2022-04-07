@@ -142,7 +142,7 @@ impl PermissionsFilters {
         match &self.group_id {
             Some(group_id) => {
                 query.push_str(&format!(
-                    " LEFT JOIN group_permissions USING(permission_id) WHERE group_id=${}\n",
+                    " LEFT JOIN group_permissions USING(permission_id) WHERE group_id=${}",
                     cnt
                 ));
                 cnt += 1;
@@ -153,7 +153,7 @@ impl PermissionsFilters {
         match &self.permission_id {
             Some(permission_id) => {
                 params.push(permission_id);
-                query.push_str(&format!(" AND permission_id=${}", cnt));
+                query.push_str(&format!(" AND p.permission_id=${}", cnt));
                 cnt += 1;
             }
             None => (),
@@ -187,7 +187,7 @@ impl PermissionsFilters {
                 params.push(limit);
                 query.push_str(&format!(" LIMIT ${}", cnt))
             }
-            None => query.push_str(" LIMIT 100"),
+            None => query.push_str(" LIMIT 1000"),
         }
         (query, params)
     }

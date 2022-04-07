@@ -7,7 +7,7 @@ use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 use web::Data;
 
-#[get("user/{user_id}/")]
+#[get("users/{user_id}")]
 pub async fn get_user_by_id(user_id: web::Path<u32>, resources: Data<Resources>) -> impl Responder {
     let user_id = user_id.into_inner() as i32;
     let user_repo = UserRepo::new(resources.db_pool.clone());
@@ -21,7 +21,7 @@ pub async fn get_user_by_id(user_id: web::Path<u32>, resources: Data<Resources>)
     }
 }
 
-#[delete("user/{user_id}/")]
+#[delete("users/{user_id}")]
 pub async fn delete_user_by_id(
     user_id: web::Path<u32>,
     resources: Data<Resources>,
@@ -38,7 +38,7 @@ pub async fn delete_user_by_id(
     }
 }
 
-#[post("user/")]
+#[post("users")]
 pub async fn create_user_handler(
     user_data: web::Json<InputRawUser>,
     resources: Data<Resources>,
@@ -53,7 +53,7 @@ pub async fn create_user_handler(
     }
 }
 
-#[post("user/sign_in/")]
+#[post("users/sign_in")]
 pub async fn sign_in_user_handler(
     user_data: web::Json<InputRawUser>,
     resources: Data<Resources>,

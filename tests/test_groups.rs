@@ -10,7 +10,7 @@ mod constants;
 async fn test_get_group() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::get()
-        .uri("/api/v1/groups/1/")
+        .uri("/api/v1/groups/1")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
@@ -28,7 +28,7 @@ async fn test_create_new_group() {
     });
     let req = test::TestRequest::post()
         .insert_header(header::ContentType::json())
-        .uri("/api/v1/groups/")
+        .uri("/api/v1/groups")
         .set_json(request_body)
         .to_request();
     let resp = test::call_service(&mut app, req).await;
@@ -44,7 +44,7 @@ async fn test_delete_group() {
     let mut app = init_test_service().await;
     // delete row wich not existed
     let req = test::TestRequest::delete()
-        .uri("/api/v1/groups/9999/")
+        .uri("/api/v1/groups/9999")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
@@ -52,7 +52,7 @@ async fn test_delete_group() {
 
     // check initial row state in db
     let req = test::TestRequest::get()
-        .uri("/api/v1/groups/1/")
+        .uri("/api/v1/groups/1")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
@@ -64,14 +64,14 @@ async fn test_delete_group() {
 
     // delete
     let req = test::TestRequest::delete()
-        .uri("/api/v1/groups/1/")
+        .uri("/api/v1/groups/1")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 204);
     // delete again
     let req = test::TestRequest::delete()
-        .uri("/api/v1/groups/1/")
+        .uri("/api/v1/groups/1")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
@@ -79,7 +79,7 @@ async fn test_delete_group() {
 
     // check row updated in db
     let req = test::TestRequest::get()
-        .uri("/api/v1/groups/1/")
+        .uri("/api/v1/groups/1")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
