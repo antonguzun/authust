@@ -35,9 +35,8 @@ const DISABLE_PERMISSION_BY_ID_QUERY: &str = "UPDATE permissions
     SET is_deleted=TRUE, updated_at=$1 
     WHERE permission_id=$2 AND is_deleted=FALSE";
 const GET_BY_FILTERS_QUERY: &str =
-    "SELECT permission_id, permission_name, created_at, updated_at, is_deleted 
-    FROM permissions 
-    WHERE TRUE";
+    "SELECT permission_id, permission_name, p.created_at, p.updated_at, p.is_deleted 
+    FROM permissions p";
 
 async fn get_client(db_pool: &Pool) -> Result<Client, AccessModelError> {
     match db_pool.get().await {
@@ -132,78 +131,66 @@ impl DisablePermission for PermissionRepo {
     }
 }
 
-fn build_listing_query(base_query: &str, filters: &PermissionsFilters) -> String {
-    let mut query = base_query.to_string();
-    let mut cnt: u8 = 1;
-    match filters.permission_id {
-        Some(_) => {
-            query.push_str(&format!(" AND permission_id=${}", cnt));
-            cnt += 1;
+impl PermissionsFilters {
+    fn build_listing_query_with_params(
+        &self,
+        base_query: &str,
+    ) -> (String, Vec<&(dyn ToSql + Sync)>) {
+        let mut params: Vec<&(dyn ToSql + Sync)> = vec![];
+        let mut query = base_query.to_string();
+        let mut cnt: u8 = 1;
+        match &self.group_id {
+            Some(group_id) => {
+                query.push_str(&format!(
+                    " LEFT JOIN group_permissions USING(permission_id) WHERE group_id=${}\n",
+                    cnt
+                ));
+                cnt += 1;
+                params.push(group_id)
+            }
+            None => query.push_str(" WHERE TRUE"),
         }
-        None => (),
-    }
-    match filters.permission_name {
-        Some(_) => {
-            query.push_str(&format!(" AND permission_name=${}", cnt));
-            cnt += 1;
+        match &self.permission_id {
+            Some(permission_id) => {
+                params.push(permission_id);
+                query.push_str(&format!(" AND permission_id=${}", cnt));
+                cnt += 1;
+            }
+            None => (),
         }
-        None => (),
-    }
-    match filters.group_id {
-        Some(_) => {
-            query.push_str(&format!(" AND group_id=${}", cnt));
-            cnt += 1;
+        match &self.permission_name {
+            Some(permission_name) => {
+                params.push(permission_name);
+                query.push_str(&format!(" AND permission_name=${}", cnt));
+                cnt += 1;
+            }
+            None => (),
         }
-        None => (),
-    }
-    match filters.is_deleted {
-        Some(_) => {
-            query.push_str(&format!(" AND is_deleted=${}", cnt));
-            cnt += 1;
+        match &self.is_deleted {
+            Some(is_deleted) => {
+                params.push(is_deleted);
+                query.push_str(&format!(" AND p.is_deleted=${}", cnt));
+                cnt += 1;
+            }
+            None => (),
         }
-        None => (),
-    }
-    match filters.offset {
-        Some(_) => {
-            query.push_str(&format!(" OFFSET ${}", cnt));
-            cnt += 1;
+        match &self.offset {
+            Some(offset) => {
+                params.push(offset);
+                query.push_str(&format!(" OFFSET ${}", cnt));
+                cnt += 1;
+            }
+            None => query.push_str(" OFFSET 0"),
         }
-        None => query.push_str(" OFFSET 0"),
+        match &self.limit {
+            Some(limit) => {
+                params.push(limit);
+                query.push_str(&format!(" LIMIT ${}", cnt))
+            }
+            None => query.push_str(" LIMIT 100"),
+        }
+        (query, params)
     }
-    match filters.limit {
-        Some(_) => query.push_str(&format!(" LIMIT ${}", cnt)),
-        None => query.push_str(" LIMIT 100"),
-    }
-    query
-}
-
-fn build_listing_params(filters: &PermissionsFilters) -> Vec<&(dyn ToSql + Sync)> {
-    let mut params: Vec<&(dyn ToSql + Sync)> = vec![];
-    match &filters.permission_id {
-        Some(permission_id) => params.push(permission_id),
-        None => (),
-    }
-    match &filters.permission_name {
-        Some(permission_name) => params.push(permission_name),
-        None => (),
-    }
-    match &filters.group_id {
-        Some(group_id) => params.push(group_id),
-        None => (),
-    }
-    match &filters.is_deleted {
-        Some(is_deleted) => params.push(is_deleted),
-        None => (),
-    }
-    match &filters.offset {
-        Some(offset) => params.push(offset),
-        None => (),
-    }
-    match &filters.limit {
-        Some(limit) => params.push(limit),
-        None => (),
-    }
-    params
 }
 
 #[async_trait]
@@ -213,8 +200,7 @@ impl GetPermissionsList for PermissionRepo {
         filters: PermissionsFilters,
     ) -> Result<Vec<Permission>, AccessModelError> {
         let client = get_client(&self.db_pool).await?;
-        let query = build_listing_query(GET_BY_FILTERS_QUERY, &filters);
-        let params = build_listing_params(&filters);
+        let (query, params) = filters.build_listing_query_with_params(GET_BY_FILTERS_QUERY);
         let stmt = prepare_stmt(&client, &query).await?;
         match client.query(&stmt, &params).await {
             Ok(rows) => Ok(rows
