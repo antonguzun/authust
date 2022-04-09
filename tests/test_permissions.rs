@@ -101,7 +101,7 @@ async fn test_get_permissions_listing() {
     let test_cases = [
         FiltersTestCase {
             url: "/api/v1/permissions?group_id=1&is_deleted=false&limit=10&offset=0",
-            quantity_of_permissions: 0,
+            quantity_of_permissions: 2,
         },
         FiltersTestCase {
             url: "/api/v1/permissions",

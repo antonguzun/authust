@@ -27,6 +27,16 @@ const GROUPS_FUXTURE: &str =
     (1, 'GROUP_1', '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
     (2, 'GROUP_2', '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
     (3, 'GROUP_3', now(), now(), TRUE)";
+const GROUPS_PERMISSIONS_BINDING_FUXTURE: &str =
+    "INSERT INTO group_permissions (permission_id, group_id, created_at, updated_at, is_deleted)
+    VALUES 
+    (1, 1, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+    (2, 1, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+    (3, 1, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+    (1, 2, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+    (2, 2, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+    (3, 2, now(), now(), TRUE),
+    (3, 3, now(), now(), FALSE)";
 
 async fn refresh_db(resources: &Resources) -> () {
     let client = resources.db_pool.get().await.unwrap();
@@ -44,6 +54,10 @@ async fn refresh_db(resources: &Resources) -> () {
     client.simple_query(USERS_FIXTURE).await.unwrap();
     client.simple_query(PERMISSIONS_FIXTURE).await.unwrap();
     client.simple_query(GROUPS_FUXTURE).await.unwrap();
+    client
+        .simple_query(GROUPS_PERMISSIONS_BINDING_FUXTURE)
+        .await
+        .unwrap();
 }
 
 pub async fn init_test_service(

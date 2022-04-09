@@ -24,6 +24,7 @@ pub async fn create_new_user(
     };
     match user_access_model.save_user_in_storage(user_data).await {
         Ok(user) => Ok(user),
+        Err(AccessModelError::AlreadyExists) => Err(UserUCError::AlreadyExists),
         Err(AccessModelError::TemporaryError) => Err(UserUCError::TemporaryError),
         Err(_) => Err(UserUCError::FatalError),
     }

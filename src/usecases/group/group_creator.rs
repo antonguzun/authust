@@ -18,6 +18,7 @@ pub async fn create_new_group(
 ) -> Result<Group, GroupUCError> {
     match group_access_model.save_group_in_storage(group_data).await {
         Ok(group) => Ok(group),
+        Err(AccessModelError::AlreadyExists) => Err(GroupUCError::AlreadyExists),
         Err(AccessModelError::TemporaryError) => Err(GroupUCError::TemporaryError),
         Err(_) => Err(GroupUCError::FatalError),
     }

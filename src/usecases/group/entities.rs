@@ -32,3 +32,30 @@ impl Group {
 pub struct GroupForCreation {
     pub group_name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct GroupsPermissionBinding {
+    pub permission_id: i32,
+    pub group_id: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub is_deleted: bool,
+}
+
+impl GroupsPermissionBinding {
+    pub fn new(
+        permission_id: i32,
+        group_id: i32,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+        is_deleted: bool,
+    ) -> GroupsPermissionBinding {
+        GroupsPermissionBinding {
+            permission_id,
+            group_id,
+            created_at,
+            updated_at,
+            is_deleted,
+        }
+    }
+}

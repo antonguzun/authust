@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS permissions (
     updated_at timestamptz NOT NULL,
     is_deleted boolean NOT NULL
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS permission_unique_name ON permissions (permission_name);
 
 CREATE TABLE IF NOT EXISTS groups (
@@ -15,7 +14,6 @@ CREATE TABLE IF NOT EXISTS groups (
     updated_at timestamptz NOT NULL,
     is_deleted boolean NOT NULL
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS group_unique_name ON groups (group_name);
 
 CREATE TABLE IF NOT EXISTS group_permissions (
@@ -28,3 +26,4 @@ CREATE TABLE IF NOT EXISTS group_permissions (
     CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES permissions(permission_id),
     CONSTRAINT fk_group FOREIGN KEY(group_id) REFERENCES groups(group_id)
 );
+CREATE UNIQUE INDEX IF NOT EXISTS group_permission_unique_binding ON group_permissions (group_id, permission_id);

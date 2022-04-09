@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use chrono;
 use deadpool_postgres::Pool;
 use log::error;
-use tokio_postgres::Row;
+use tokio_postgres::{error::SqlState, Row};
 
 pub struct UserRepo {
     db_pool: Pool,
@@ -100,6 +100,9 @@ impl CreateUser for UserRepo {
             Ok(_) => {
                 error!("During creation user got count of retirning rows not equals one");
                 Err(AccessModelError::FatalError)
+            }
+            Err(e) if e.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
+                Err(AccessModelError::AlreadyExists)
             }
             Err(e) => {
                 error!("{}", e);

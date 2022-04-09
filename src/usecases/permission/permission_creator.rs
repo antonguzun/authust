@@ -21,6 +21,7 @@ pub async fn create_new_permission(
         .await
     {
         Ok(permission) => Ok(permission),
+        Err(AccessModelError::AlreadyExists) => Err(PermissionUCError::AlreadyExists),
         Err(AccessModelError::TemporaryError) => Err(PermissionUCError::TemporaryError),
         Err(_) => Err(PermissionUCError::FatalError),
     }
