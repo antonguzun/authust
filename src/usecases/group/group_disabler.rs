@@ -1,4 +1,5 @@
-use crate::usecases::group::errors::{AccessModelError, GroupUCError};
+use crate::usecases::base_entities::AccessModelError;
+use crate::usecases::group::errors::GroupUCError;
 
 use async_trait::async_trait;
 

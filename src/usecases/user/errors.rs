@@ -11,10 +11,3 @@ pub enum SignError {
     TemporaryError,
     VerificationError,
 }
-
-pub enum AccessModelError {
-    FatalError,
-    TemporaryError,
-    NotFoundError,
-    AlreadyExists,
-}

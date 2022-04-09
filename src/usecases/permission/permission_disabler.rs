@@ -1,4 +1,5 @@
-use crate::usecases::permission::errors::{AccessModelError, PermissionUCError};
+use crate::usecases::base_entities::AccessModelError;
+use crate::usecases::permission::errors::PermissionUCError;
 
 use async_trait::async_trait;
 

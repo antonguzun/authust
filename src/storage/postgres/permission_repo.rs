@@ -1,17 +1,18 @@
+use crate::storage::postgres::base::{get_client, prepare_stmt};
+use crate::usecases::base_entities::AccessModelError;
 use crate::usecases::permission::entities::{
     Permission, PermissionForCreation, PermissionsFilters,
 };
-use crate::usecases::permission::errors::AccessModelError;
 use crate::usecases::permission::permission_creator::CreatePermission;
 use crate::usecases::permission::permission_disabler::DisablePermission;
 use crate::usecases::permission::permission_get_item::GetPermission;
 use crate::usecases::permission::permission_get_list::GetPermissionsList;
 use async_trait::async_trait;
 use chrono;
-use deadpool_postgres::{Client, Pool};
+use deadpool_postgres::Pool;
 use log::error;
 use tokio_postgres::types::ToSql;
-use tokio_postgres::{Row, Statement};
+use tokio_postgres::Row;
 
 pub struct PermissionRepo {
     db_pool: Pool,
@@ -37,26 +38,6 @@ const DISABLE_PERMISSION_BY_ID_QUERY: &str = "UPDATE permissions
 const GET_BY_FILTERS_QUERY: &str =
     "SELECT permission_id, permission_name, p.created_at, p.updated_at, p.is_deleted 
     FROM permissions p";
-
-async fn get_client(db_pool: &Pool) -> Result<Client, AccessModelError> {
-    match db_pool.get().await {
-        Ok(client) => Ok(client),
-        Err(e) => {
-            error!("{}", e);
-            Err(AccessModelError::TemporaryError)
-        }
-    }
-}
-
-async fn prepare_stmt(client: &Client, query: &str) -> Result<Statement, AccessModelError> {
-    match client.prepare(query).await {
-        Ok(stmt) => Ok(stmt),
-        Err(e) => {
-            error!("{}", e);
-            Err(AccessModelError::FatalError)
-        }
-    }
-}
 
 impl Permission {
     fn from_sql_result(row: &Row) -> Permission {

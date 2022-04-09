@@ -4,7 +4,7 @@ use actix_web::dev::{Service, ServiceResponse};
 use actix_web::{test, web, App};
 use rust_crud::apps::init_api_v1;
 use rust_crud::common::{Config, Resources};
-use std::{fs, thread, time};
+use std::fs;
 
 #[path = "./constants.rs"]
 mod constants;
@@ -29,11 +29,9 @@ const GROUPS_FUXTURE: &str =
     (3, 'GROUP_3', now(), now(), TRUE)";
 
 async fn refresh_db(resources: &Resources) -> () {
-    println!("START REFRESHING DB");
     let client = resources.db_pool.get().await.unwrap();
 
     let migration_paths = fs::read_dir("./tests/migrations").unwrap();
-
     for path in migration_paths {
         let filename = path.unwrap().path().display().to_string();
         let query = &fs::read_to_string(&filename).unwrap();

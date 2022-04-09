@@ -1,13 +1,14 @@
+use crate::storage::postgres::base::{get_client, prepare_stmt};
+use crate::usecases::base_entities::AccessModelError;
 use crate::usecases::user::crypto::SignInVerification;
 use crate::usecases::user::entities::{User, UserForCreation};
-use crate::usecases::user::errors::AccessModelError;
 use crate::usecases::user::get_user::{FindUserById, RemoveUserById};
 use crate::usecases::user::user_creator::CreateUser;
 use async_trait::async_trait;
 use chrono;
-use deadpool_postgres::{Client, Pool};
+use deadpool_postgres::Pool;
 use log::error;
-use tokio_postgres::{Row, Statement};
+use tokio_postgres::Row;
 
 pub struct UserRepo {
     db_pool: Pool,
@@ -30,26 +31,6 @@ const INSERT_USER_QUERY: &str = "INSERT INTO users
                                 RETURNING user_id, username, enabled, created_at, updated_at";
 const FIND_USER_BY_VERIFICATION: &str =
     "SELECT user_id FROM users WHERE username=$1 AND password_hash=$2 AND is_deleted=FALSE";
-
-async fn get_client(db_pool: &Pool) -> Result<Client, AccessModelError> {
-    match db_pool.get().await {
-        Ok(client) => Ok(client),
-        Err(e) => {
-            error!("{}", e);
-            Err(AccessModelError::TemporaryError)
-        }
-    }
-}
-
-async fn prepare_stmt(client: &Client, query: &str) -> Result<Statement, AccessModelError> {
-    match client.prepare(query).await {
-        Ok(stmt) => Ok(stmt),
-        Err(e) => {
-            error!("{}", e);
-            Err(AccessModelError::FatalError)
-        }
-    }
-}
 
 impl User {
     fn from_sql_result(row: &Row) -> User {

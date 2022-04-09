@@ -4,10 +4,3 @@ pub enum GroupUCError {
     NotFoundError,
     AlreadyExists,
 }
-
-pub enum AccessModelError {
-    FatalError,
-    TemporaryError,
-    NotFoundError,
-    AlreadyExists,
-}

@@ -1,4 +1,4 @@
-pub enum PermissionUCError {
+pub enum AccessModelError {
     FatalError,
     TemporaryError,
     NotFoundError,

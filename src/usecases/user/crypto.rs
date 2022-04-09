@@ -1,6 +1,7 @@
 use crate::common::SecurityConfig;
+use crate::usecases::base_entities::AccessModelError;
 use crate::usecases::user::entities::{InputRawUser, SingnedInfo, JWT};
-use crate::usecases::user::errors::{AccessModelError, SignError};
+use crate::usecases::user::errors::SignError;
 use argon2::{self, Config};
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
