@@ -18,6 +18,7 @@ pub async fn get_permission_handler(
     let permission_access_model = PermissionRepo::new(resources.db_pool.clone());
     match get_permission_by_id(&permission_access_model, permission_id.into_inner()).await {
         Ok(permission) => HttpResponse::Ok().json(PermissionView::new(permission)),
+        Err(PermissionUCError::NotFoundError) => HttpResponse::NotFound().body("Not Found"),
         Err(_) => {
             error!("usecase error");
             HttpResponse::InternalServerError().body("internal error")

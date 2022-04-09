@@ -69,4 +69,7 @@ curl --location --request DELETE '127.0.0.1:8080/api/v1/user/4' -i '
 
 
 ### Tests
-In progress
+Project has some integration tests. Start db before run test. Also you must use the single thread mod to avoid race condition in database.
+```
+export $(xargs < .env_example) && cargo test -j 1 -- --test-threads=1
+```

@@ -10,4 +10,4 @@ down_db:
 	docker-compose down
 
 test:
-	export $(xargs < .env_example) && cargo test
+	export $(xargs < .env_example) && cargo test -j 1 -- --test-threads=1

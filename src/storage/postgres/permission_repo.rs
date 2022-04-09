@@ -73,8 +73,9 @@ impl GetPermission for PermissionRepo {
         let stmt = prepare_stmt(&client, GET_BY_ID_QUERY).await?;
         match client.query(&stmt, &[&permission_id]).await {
             Ok(rows) if rows.len() == 1 => Ok(Permission::from_sql_result(&rows[0])),
-            Ok(_) => {
-                error!("During creation permission got count of retirning rows not equals one");
+            Ok(rows) if rows.len() == 0 => Err(AccessModelError::NotFoundError),
+            Ok(rows) => {
+                error!("Unexpected count if rows: {}", rows.len());
                 Err(AccessModelError::FatalError)
             }
             Err(e) => {

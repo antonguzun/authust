@@ -3,7 +3,7 @@ use rust_crud::handlers::api::permissions::views::{PermissionListingView, Permis
 use serde_json::json;
 
 mod utils;
-use utils::{flash_table, init_test_service, write_default_fixture_for_table, TestTables};
+use utils::init_test_service;
 mod constants;
 
 #[actix_web::test]
@@ -98,8 +98,6 @@ struct FiltersTestCase<'a> {
 #[actix_web::test]
 async fn test_get_permissions_listing() {
     let mut app = init_test_service().await;
-    flash_table(TestTables::Permissions).await;
-    write_default_fixture_for_table(TestTables::Permissions).await;
     let test_cases = [
         FiltersTestCase {
             url: "/api/v1/permissions?group_id=1&is_deleted=false&limit=10&offset=0",
