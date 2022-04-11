@@ -7,7 +7,7 @@ use serde_json::json;
 mod utils;
 use utils::init_test_service;
 mod constants;
-use constants::TEST_PASSWORD;
+use constants::TEST_BASIC_AUTH_HEADER;
 
 #[actix_web::test]
 async fn test_get_user() {
@@ -71,7 +71,7 @@ async fn test_create_new_user() {
     let mut app = init_test_service().await;
     let request_body = json!({
         "username": "tester",
-        "password": "test",
+        "password": "test_pass",
     });
     let req = test::TestRequest::post()
         .insert_header(header::ContentType::json())
@@ -87,31 +87,31 @@ async fn test_create_new_user() {
 
 #[actix_web::test]
 async fn test_sign_in_forbidden() {
+    let wrong_headers = [
+        ("Authorization", "dGVzdF91c2VyOmhlbGxvMQ=="), // wrong password
+        ("Authorization", "dGVzdF91c2VyOg=="),         // no password
+        ("Authorization", "dGVzdF91c2VyOmhlbGxv"),     // no divider
+        ("Authorization", "OmhlbGxv"),                 // no username
+        ("Authorization", "asd"),
+        ("Authorization", ""),
+    ];
     let mut app = init_test_service().await;
-    let request_body = json!({
-        "username": "keker",
-        "password": "wrong_passord",
-    });
-    let req = test::TestRequest::post()
-        .insert_header(header::ContentType::json())
-        .uri("/api/v1/users/sign_in")
-        .set_json(request_body)
-        .to_request();
-    let resp = test::call_service(&mut app, req).await;
-    assert_eq!(resp.status(), 403)
+    for wrong_header in wrong_headers {
+        let req = test::TestRequest::post()
+            .insert_header(wrong_header)
+            .uri("/api/v1/users/sign_in")
+            .to_request();
+        let resp = test::call_service(&mut app, req).await;
+        assert_eq!(resp.status(), 403)
+    }
 }
 
 #[actix_web::test]
 async fn test_sign_in() {
     let mut app = init_test_service().await;
-    let request_body = json!({
-        "username": "Anton",
-        "password": TEST_PASSWORD,
-    });
     let req = test::TestRequest::post()
-        .insert_header(header::ContentType::json())
+        .insert_header(TEST_BASIC_AUTH_HEADER)
         .uri("/api/v1/users/sign_in")
-        .set_json(request_body)
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();

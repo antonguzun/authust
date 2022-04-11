@@ -11,12 +11,6 @@ pub struct User {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct InputRawUser {
-    pub username: String,
-    pub password: String,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct UserForCreation {
     pub username: String,
     pub password_hash: String,

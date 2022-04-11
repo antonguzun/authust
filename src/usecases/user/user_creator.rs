@@ -1,6 +1,6 @@
 use crate::usecases::base_entities::AccessModelError;
 use crate::usecases::user::crypto::generate_hash;
-use crate::usecases::user::entities::{InputRawUser, User, UserForCreation};
+use crate::usecases::user::entities::{User, UserForCreation};
 use crate::usecases::user::errors::UserUCError;
 
 use async_trait::async_trait;
@@ -12,14 +12,15 @@ pub trait CreateUser {
 
 pub async fn create_new_user(
     user_access_model: &impl CreateUser,
-    raw_user: InputRawUser,
+    username: String,
+    password: String,
 ) -> Result<User, UserUCError> {
-    let hash = match generate_hash(&raw_user.password) {
+    let hash = match generate_hash(&password) {
         Ok(hash) => hash,
         Err(_) => return Err(UserUCError::FatalError),
     };
     let user_data = UserForCreation {
-        username: raw_user.username,
+        username: username,
         password_hash: hash,
     };
     match user_access_model.save_user_in_storage(user_data).await {

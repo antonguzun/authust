@@ -1,10 +1,12 @@
 use crate::common::{Config, Resources};
 use crate::storage::postgres::user_repo::UserRepo;
-use crate::usecases::user::entities::InputRawUser;
 use crate::usecases::user::errors::{SignError, UserUCError};
 use crate::usecases::user::{crypto, get_user, user_creator};
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
+use actix_web::http::header::Header;
+use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use log::error;
+use serde::Deserialize;
 use web::Data;
 
 #[get("users/{user_id}")]
@@ -38,13 +40,22 @@ pub async fn delete_user_by_id(
     }
 }
 
+#[derive(Deserialize)]
+
+pub struct UserCreationScheme {
+    username: String,
+    password: String,
+}
+
 #[post("users")]
 pub async fn create_user_handler(
-    user_data: web::Json<InputRawUser>,
+    user_data: web::Json<UserCreationScheme>,
     resources: Data<Resources>,
 ) -> impl Responder {
+    let username = user_data.username.to_string();
+    let password = user_data.password.to_string();
     let user_access_model = UserRepo::new(resources.db_pool.clone());
-    match user_creator::create_new_user(&user_access_model, user_data.into_inner()).await {
+    match user_creator::create_new_user(&user_access_model, username, password).await {
         Ok(user) => HttpResponse::Created().json(user),
         Err(_) => {
             error!("usecase error");
@@ -55,22 +66,32 @@ pub async fn create_user_handler(
 
 #[post("users/sign_in")]
 pub async fn sign_in_user_handler(
-    user_data: web::Json<InputRawUser>,
+    req: HttpRequest,
     resources: Data<Resources>,
     config: Data<Config>,
 ) -> impl Responder {
+    let auth_header = match Authorization::<Basic>::parse(&req) {
+        Ok(header) => header,
+        Err(_) => return HttpResponse::Forbidden().body("Forbidden"),
+    };
+    let username = auth_header.as_ref().user_id().to_string();
+    let password = match auth_header.as_ref().password() {
+        Some(cow_pass) => cow_pass.to_string(),
+        None => return HttpResponse::Forbidden().body("Forbidden"),
+    };
     let user_access_model = UserRepo::new(resources.db_pool.clone());
     match crypto::sign_in(
         &user_access_model,
         &config.security_config,
-        user_data.into_inner(),
+        username,
+        password,
     )
     .await
     {
         Ok(signed_info) => HttpResponse::Ok().json(signed_info),
         Err(SignError::VerificationError) => HttpResponse::Forbidden().body("Forbidden"),
         Err(_) => {
-            error!("usecase error");
+            error!("Usecase fatal error during singin");
             HttpResponse::InternalServerError().body("internal error")
         }
     }

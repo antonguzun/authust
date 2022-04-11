@@ -1,6 +1,6 @@
 use crate::common::SecurityConfig;
 use crate::usecases::base_entities::AccessModelError;
-use crate::usecases::user::entities::{InputRawUser, SingnedInfo, JWT};
+use crate::usecases::user::entities::{SingnedInfo, JWT};
 use crate::usecases::user::errors::SignError;
 use argon2::{self, Config};
 use async_trait::async_trait;
@@ -67,16 +67,14 @@ pub trait SignInVerification {
 pub async fn sign_in(
     verificator: &impl SignInVerification,
     security_config: &SecurityConfig,
-    user_info: InputRawUser,
+    username: String,
+    password: String,
 ) -> Result<SingnedInfo, SignError> {
-    let hash = match generate_hash(&user_info.password) {
+    let hash = match generate_hash(&password) {
         Ok(hash) => hash,
         Err(_) => return Err(SignError::FatalError),
     };
-    let user_id = match verificator
-        .verificate_default(&user_info.username, &hash)
-        .await
-    {
+    let user_id = match verificator.verificate_default(&username, &hash).await {
         Ok(user_id) => user_id,
         Err(AccessModelError::NotFoundError) => return Err(SignError::VerificationError),
         Err(AccessModelError::TemporaryError) => return Err(SignError::TemporaryError),

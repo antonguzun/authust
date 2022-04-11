@@ -13,7 +13,7 @@ const USERS_FIXTURE: &str = "INSERT INTO users
     (user_id, username, password_hash, enabled, created_at, updated_at, is_deleted)
     VALUES 
     (1, 'Ivan', '1234', TRUE, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
-    (2, 'Anton', '$argon2i$v=19$m=4096,t=3,p=1$MjJmNjVlNzktNDk2YS00YjQ4LThhYmMtZjgzZTFlNTJhYTRl$GrBGOuJ9PznSgBOp0e5sdkMf2KAfgnubSh37Oq0HAzw', TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+    (2, 'test_user', '$argon2i$v=19$m=4096,t=3,p=1$MjJmNjVlNzktNDk2YS00YjQ4LThhYmMtZjgzZTFlNTJhYTRl$GrBGOuJ9PznSgBOp0e5sdkMf2KAfgnubSh37Oq0HAzw', TRUE, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
     (3, 'Godzilla', '1234', TRUE, now(), now(), FALSE)";
 const PERMISSIONS_FIXTURE: &str =
     "INSERT INTO permissions (permission_id, permission_name, created_at, updated_at, is_deleted)
