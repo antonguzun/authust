@@ -15,7 +15,6 @@ use crate::usecases::group::group_permissions_binder::{
 use crate::{common::Resources, usecases::group::errors::GroupUCError};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use log::error;
-use serde::Deserialize;
 
 #[get("groups/{group_id}")]
 pub async fn get_group_handler(
