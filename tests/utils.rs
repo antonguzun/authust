@@ -37,6 +37,16 @@ const GROUPS_PERMISSIONS_BINDING_FUXTURE: &str =
     (2, 2, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
     (3, 2, now(), now(), TRUE),
     (3, 3, now(), now(), FALSE)";
+const GROUPS_MEMBERS_BINDING_FUXTURE: &str =
+    "INSERT INTO group_members (user_id, group_id, created_at, updated_at, is_deleted)
+    VALUES 
+    (1, 1, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+    (2, 1, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+    (3, 1, '2016-06-22 22:10:25+03', '2016-06-22 22:10:25+03', FALSE), 
+    (1, 2, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+    (2, 2, '2022-06-22 22:10:25+00', '2022-06-22 22:10:25+00', FALSE), 
+    (3, 2, now(), now(), TRUE),
+    (3, 3, now(), now(), FALSE)";
 
 async fn refresh_db(resources: &Resources) -> () {
     let client = resources.db_pool.get().await.unwrap();
@@ -51,13 +61,16 @@ async fn refresh_db(resources: &Resources) -> () {
         .simple_query("TRUNCATE TABLE users, permissions, groups, group_permissions CASCADE")
         .await
         .unwrap();
-    client.simple_query(USERS_FIXTURE).await.unwrap();
-    client.simple_query(PERMISSIONS_FIXTURE).await.unwrap();
-    client.simple_query(GROUPS_FUXTURE).await.unwrap();
-    client
-        .simple_query(GROUPS_PERMISSIONS_BINDING_FUXTURE)
-        .await
-        .unwrap();
+    let fixtures_queries = [
+        USERS_FIXTURE,
+        PERMISSIONS_FIXTURE,
+        GROUPS_FUXTURE,
+        GROUPS_MEMBERS_BINDING_FUXTURE,
+        GROUPS_PERMISSIONS_BINDING_FUXTURE,
+    ];
+    for query in fixtures_queries.into_iter() {
+        client.simple_query(query).await.unwrap();
+    }
 }
 
 pub async fn init_test_service(

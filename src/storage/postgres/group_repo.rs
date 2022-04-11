@@ -1,10 +1,13 @@
 use crate::storage::postgres::base::{get_client, prepare_stmt};
 use crate::usecases::base_entities::AccessModelError;
-use crate::usecases::group::entities::{Group, GroupForCreation, GroupsPermissionBinding};
-use crate::usecases::group::group_binder::GroupBindPermission;
+use crate::usecases::group::entities::{
+    Group, GroupForCreation, GroupsMemberBinding, GroupsPermissionBinding,
+};
 use crate::usecases::group::group_creator::CreateGroup;
 use crate::usecases::group::group_disabler::DisableGroup;
 use crate::usecases::group::group_get_item::GetGroup;
+use crate::usecases::group::group_members_binder::GroupBindMember;
+use crate::usecases::group::group_permissions_binder::GroupBindPermission;
 
 use async_trait::async_trait;
 use chrono;
@@ -42,15 +45,31 @@ const ENABLE_GROUPS_PERMISSION_BINDING_QUERY: &str = "UPDATE group_permissions
     SET is_deleted=FALSE, updated_at=$1 
     WHERE permission_id=$2 AND group_id=$3
     RETURNING permission_id, group_id, created_at, updated_at, is_deleted";
-const ADD_PERMISSION_TO_GROUPS_QUERY: &str = "INSERT INTO group_permissions 
+const ADD_PERMISSION_TO_GROUP_QUERY: &str = "INSERT INTO group_permissions 
     (permission_id, group_id, created_at, updated_at, is_deleted)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING permission_id, group_id, created_at, updated_at, is_deleted";
-#[warn(dead_code)]
 const DISABLE_GROUPS_PERMISSION_BINDING_QUERY: &str = "UPDATE group_permissions 
     SET is_deleted=TRUE, updated_at=$1 
     WHERE permission_id=$2 AND group_id=$3
     RETURNING permission_id, group_id, created_at, updated_at, is_deleted";
+
+const GET_GROUPS_MEMBER_BINDING_BY_PK_QUERY: &str =
+    "SELECT user_id, group_id, created_at, updated_at, is_deleted 
+    FROM group_members 
+    WHERE user_id=$1 AND group_id=$2";
+const ENABLE_GROUPS_MEMBER_BINDING_QUERY: &str = "UPDATE group_members 
+    SET is_deleted=FALSE, updated_at=$1 
+    WHERE user_id=$2 AND group_id=$3
+    RETURNING user_id, group_id, created_at, updated_at, is_deleted";
+const ADD_MEMBER_TO_GROUP_QUERY: &str = "INSERT INTO group_members 
+    (user_id, group_id, created_at, updated_at, is_deleted)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING user_id, group_id, created_at, updated_at, is_deleted";
+const DISABLE_GROUPS_MEMBER_BINDING_QUERY: &str = "UPDATE group_members 
+    SET is_deleted=TRUE, updated_at=$1 
+    WHERE user_id=$2 AND group_id=$3
+    RETURNING user_id, group_id, created_at, updated_at, is_deleted";
 
 impl Group {
     fn from_sql_result(row: &Row) -> Group {
@@ -178,7 +197,7 @@ impl GroupBindPermission for GroupRepo {
         perm_id: i32,
     ) -> Result<GroupsPermissionBinding, AccessModelError> {
         let client = get_client(&self.db_pool).await?;
-        let stmt = prepare_stmt(&client, ADD_PERMISSION_TO_GROUPS_QUERY).await?;
+        let stmt = prepare_stmt(&client, ADD_PERMISSION_TO_GROUP_QUERY).await?;
         let now = chrono::Utc::now();
         match client
             .query(&stmt, &[&perm_id, &group_id, &now, &now, &false])
@@ -212,6 +231,105 @@ impl GroupBindPermission for GroupRepo {
             Ok(rows) if rows.len() == 0 => Err(AccessModelError::NotFoundError),
             Ok(_) => {
                 error!("During unbinding permission count of retirning rows not equals one");
+                Err(AccessModelError::FatalError)
+            }
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+}
+
+impl GroupsMemberBinding {
+    fn from_sql_result(row: &Row) -> GroupsMemberBinding {
+        GroupsMemberBinding::new(row.get(0), row.get(1), row.get(2), row.get(3), row.get(4))
+    }
+}
+
+#[async_trait]
+impl GroupBindMember for GroupRepo {
+    async fn get_groups_member_binding(
+        &self,
+        group_id: i32,
+        user_id: i32,
+    ) -> Result<GroupsMemberBinding, AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, GET_GROUPS_MEMBER_BINDING_BY_PK_QUERY).await?;
+        match client.query(&stmt, &[&user_id, &group_id]).await {
+            Ok(rows) if rows.len() == 1 => Ok(GroupsMemberBinding::from_sql_result(&rows[0])),
+            Ok(rows) if rows.len() == 0 => Err(AccessModelError::NotFoundError),
+            Ok(_) => {
+                error!("During getting binding count of retirning rows not equals one");
+                Err(AccessModelError::FatalError)
+            }
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+    async fn enable_existed_groups_member_binding(
+        &self,
+        group_id: i32,
+        user_id: i32,
+    ) -> Result<GroupsMemberBinding, AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, ENABLE_GROUPS_MEMBER_BINDING_QUERY).await?;
+        let now = chrono::Utc::now();
+        match client.query(&stmt, &[&now, &user_id, &group_id]).await {
+            Ok(rows) if rows.len() == 1 => Ok(GroupsMemberBinding::from_sql_result(&rows[0])),
+            Ok(rows) if rows.len() == 0 => Err(AccessModelError::NotFoundError),
+            Ok(_) => {
+                error!("During binding member count of retirning rows not equals one");
+                Err(AccessModelError::FatalError)
+            }
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+    async fn add_member_to_group(
+        &self,
+        group_id: i32,
+        user_id: i32,
+    ) -> Result<GroupsMemberBinding, AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, ADD_MEMBER_TO_GROUP_QUERY).await?;
+        let now = chrono::Utc::now();
+        match client
+            .query(&stmt, &[&user_id, &group_id, &now, &now, &false])
+            .await
+        {
+            Ok(rows) if rows.len() == 1 => Ok(GroupsMemberBinding::from_sql_result(&rows[0])),
+            Ok(_) => {
+                error!("During creation binding got count of retirning rows not equals one");
+                Err(AccessModelError::FatalError)
+            }
+            Err(e) if e.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
+                Err(AccessModelError::AlreadyExists)
+            }
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+    async fn disable_existed_groups_member_binding(
+        &self,
+        group_id: i32,
+        user_id: i32,
+    ) -> Result<GroupsMemberBinding, AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, DISABLE_GROUPS_MEMBER_BINDING_QUERY).await?;
+
+        let now = chrono::Utc::now();
+        match client.query(&stmt, &[&now, &user_id, &group_id]).await {
+            Ok(rows) if rows.len() == 1 => Ok(GroupsMemberBinding::from_sql_result(&rows[0])),
+            Ok(rows) if rows.len() == 0 => Err(AccessModelError::NotFoundError),
+            Ok(_) => {
+                error!("During unbinding member count of retirning rows not equals one");
                 Err(AccessModelError::FatalError)
             }
             Err(e) => {

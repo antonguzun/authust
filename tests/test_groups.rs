@@ -1,5 +1,7 @@
 use actix_web::{http::header, test};
-use rust_crud::handlers::api::groups::views::{GroupView, GroupsPermissionBindingView};
+use rust_crud::handlers::api::groups::views::{
+    GroupView, GroupsMemberBindingView, GroupsPermissionBindingView,
+};
 use serde_json::json;
 
 mod utils;
@@ -165,6 +167,85 @@ async fn test_unbind_permission_with_group() {
     let binding: GroupsPermissionBindingView = test::read_body_json(resp).await;
     assert_eq!(binding.group_id, 1);
     assert_eq!(binding.permission_id, 1);
+    assert_eq!(binding.is_deleted, true);
+    assert_ne!(binding.created_at, binding.updated_at);
+}
+
+#[actix_web::test]
+async fn test_bind_member_with_group() {
+    let mut app = init_test_service().await;
+    let request_body = json!({
+        "group_id": 3,
+        "user_id": 1,
+    });
+    let req = test::TestRequest::put()
+        .insert_header(header::ContentType::json())
+        .uri("/api/v1/groups/bind_member")
+        .set_json(request_body)
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let binding: GroupsMemberBindingView = test::read_body_json(resp).await;
+    assert_eq!(binding.group_id, 3);
+    assert_eq!(binding.user_id, 1);
+    assert_eq!(binding.is_deleted, false);
+}
+
+#[actix_web::test]
+async fn test_bind_member_with_group_but_binding_exists() {
+    let mut app = init_test_service().await;
+    let request_body = json!({
+        "group_id": 1,
+        "user_id": 1,
+    });
+    let req = test::TestRequest::put()
+        .insert_header(header::ContentType::json())
+        .uri("/api/v1/groups/bind_member")
+        .set_json(request_body)
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let binding: GroupsMemberBindingView = test::read_body_json(resp).await;
+    assert_eq!(binding.group_id, 1);
+    assert_eq!(binding.user_id, 1);
+    assert_eq!(binding.is_deleted, false);
+}
+
+#[actix_web::test]
+async fn test_bind_member_with_group_implicitly_enable_without_creation() {
+    let mut app = init_test_service().await;
+    let request_body = json!({
+        "group_id": 2,
+        "user_id": 3,
+    });
+    let req = test::TestRequest::put()
+        .insert_header(header::ContentType::json())
+        .uri("/api/v1/groups/bind_member")
+        .set_json(request_body)
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let binding: GroupsMemberBindingView = test::read_body_json(resp).await;
+    assert_eq!(binding.group_id, 2);
+    assert_eq!(binding.user_id, 3);
+    assert_eq!(binding.is_deleted, false);
+}
+
+#[actix_web::test]
+async fn test_unbind_member_with_group() {
+    let mut app = init_test_service().await;
+    let req = test::TestRequest::put()
+        .uri("/api/v1/groups/1/unbind_member/1")
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let binding: GroupsMemberBindingView = test::read_body_json(resp).await;
+    assert_eq!(binding.group_id, 1);
+    assert_eq!(binding.user_id, 1);
     assert_eq!(binding.is_deleted, true);
     assert_ne!(binding.created_at, binding.updated_at);
 }

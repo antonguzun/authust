@@ -59,3 +59,30 @@ impl GroupsPermissionBinding {
         }
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct GroupsMemberBinding {
+    pub user_id: i32,
+    pub group_id: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub is_deleted: bool,
+}
+
+impl GroupsMemberBinding {
+    pub fn new(
+        user_id: i32,
+        group_id: i32,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+        is_deleted: bool,
+    ) -> GroupsMemberBinding {
+        GroupsMemberBinding {
+            user_id,
+            group_id,
+            created_at,
+            updated_at,
+            is_deleted,
+        }
+    }
+}

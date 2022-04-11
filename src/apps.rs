@@ -1,6 +1,7 @@
 use crate::handlers::api::groups::handlers::{
-    bind_permission_with_group_handler, create_group_handler, disable_group_handler,
-    get_group_handler, unbind_permission_with_group_handler,
+    bind_member_with_group_handler, bind_permission_with_group_handler, create_group_handler,
+    disable_group_handler, get_group_handler, unbind_member_with_group_handler,
+    unbind_permission_with_group_handler,
 };
 use crate::handlers::api::permissions::handlers::{
     create_permission_handler, disable_permission_handler, get_permission_handler,
@@ -26,7 +27,9 @@ pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
         .service(create_group_handler)
         .service(disable_group_handler)
         .service(bind_permission_with_group_handler)
-        .service(unbind_permission_with_group_handler);
+        .service(unbind_permission_with_group_handler)
+        .service(bind_member_with_group_handler)
+        .service(unbind_member_with_group_handler);
 }
 
 pub fn init_system(cfg: &mut web::ServiceConfig) {
