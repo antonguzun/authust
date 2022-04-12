@@ -1,3 +1,4 @@
+use crate::storage::postgres::base::{delete_item, get_item, insert_item, SqlSerializer};
 use crate::storage::postgres::base::{get_client, prepare_stmt};
 use crate::usecases::base_entities::AccessModelError;
 use crate::usecases::permission::entities::{
@@ -12,7 +13,7 @@ use chrono;
 use deadpool_postgres::Pool;
 use log::error;
 use tokio_postgres::types::ToSql;
-use tokio_postgres::{error::SqlState, Row};
+use tokio_postgres::Row;
 
 pub struct PermissionRepo {
     db_pool: Pool,
@@ -39,31 +40,15 @@ const GET_BY_FILTERS_QUERY: &str =
     "SELECT permission_id, permission_name, p.created_at, p.updated_at, p.is_deleted 
     FROM permissions p";
 
-impl Permission {
+impl SqlSerializer<Permission> for Permission {
     fn from_sql_result(row: &Row) -> Permission {
         Permission::new(row.get(0), row.get(1), row.get(2), row.get(3), row.get(4))
     }
 }
 #[async_trait]
 impl GetPermission for PermissionRepo {
-    async fn get_permission_by_id(
-        &self,
-        permission_id: i32,
-    ) -> Result<Permission, AccessModelError> {
-        let client = get_client(&self.db_pool).await?;
-        let stmt = prepare_stmt(&client, GET_BY_ID_QUERY).await?;
-        match client.query(&stmt, &[&permission_id]).await {
-            Ok(rows) if rows.len() == 1 => Ok(Permission::from_sql_result(&rows[0])),
-            Ok(rows) if rows.len() == 0 => Err(AccessModelError::NotFoundError),
-            Ok(rows) => {
-                error!("Unexpected count if rows: {}", rows.len());
-                Err(AccessModelError::FatalError)
-            }
-            Err(e) => {
-                error!("{}", e);
-                Err(AccessModelError::FatalError)
-            }
-        }
+    async fn get_permission_by_id(&self, perm_id: i32) -> Result<Permission, AccessModelError> {
+        get_item(&self.db_pool, GET_BY_ID_QUERY, &[&perm_id]).await
     }
 }
 #[async_trait]
@@ -72,26 +57,9 @@ impl CreatePermission for PermissionRepo {
         &self,
         perm_data: PermissionForCreation,
     ) -> Result<Permission, AccessModelError> {
-        let client = get_client(&self.db_pool).await?;
-        let stmt = prepare_stmt(&client, INSERT_PERMISSION_QUERY).await?;
         let now = chrono::Utc::now();
-        match client
-            .query(&stmt, &[&perm_data.permission_name, &now, &now, &false])
-            .await
-        {
-            Ok(rows) if rows.len() == 1 => Ok(Permission::from_sql_result(&rows[0])),
-            Ok(_) => {
-                error!("During creation permission got count of retirning rows not equals one");
-                Err(AccessModelError::FatalError)
-            }
-            Err(e) if e.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
-                Err(AccessModelError::AlreadyExists)
-            }
-            Err(e) => {
-                error!("{}", e);
-                Err(AccessModelError::FatalError)
-            }
-        }
+        let params: &[&(dyn ToSql + Sync)] = &[&perm_data.permission_name, &now, &now, &false];
+        insert_item(&self.db_pool, INSERT_PERMISSION_QUERY, params).await
     }
 }
 
@@ -101,18 +69,9 @@ impl DisablePermission for PermissionRepo {
         &self,
         permission_id: i32,
     ) -> Result<(), AccessModelError> {
-        let client = get_client(&self.db_pool).await?;
-        let stmt = prepare_stmt(&client, DISABLE_PERMISSION_BY_ID_QUERY).await?;
-
         let now = chrono::Utc::now();
-        match client.execute(&stmt, &[&now, &permission_id]).await {
-            Ok(res) if res != 0 => Ok(()),
-            Ok(_) => Err(AccessModelError::NotFoundError),
-            Err(e) => {
-                error!("{}", e);
-                Err(AccessModelError::FatalError)
-            }
-        }
+        let params: &[&(dyn ToSql + Sync)] = &[&now, &permission_id];
+        delete_item(&self.db_pool, DISABLE_PERMISSION_BY_ID_QUERY, params).await
     }
 }
 
