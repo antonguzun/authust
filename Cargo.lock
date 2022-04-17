@@ -20,6 +20,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-grants-proc-macro"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5973ec777edf6858b06285e141e49332ce520a545b7732e31a1ad4bb019e332"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "actix-http"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -183,6 +194,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-grants"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b93142682856a6404ebd64aadc5ed156fb4c229bb2ae7df12ec62686b7bceaaf"
+dependencies = [
+ "actix-grants-proc-macro",
+ "actix-web",
+]
+
+[[package]]
 name = "actix-web-httpauth"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -259,6 +280,31 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "authust"
+version = "0.1.0"
+dependencies = [
+ "actix-http",
+ "actix-rt",
+ "actix-web",
+ "actix-web-grants",
+ "actix-web-httpauth",
+ "async-trait",
+ "chrono",
+ "deadpool-postgres",
+ "env_logger",
+ "hmac 0.12.1",
+ "jwt",
+ "log",
+ "rand_core",
+ "rstest",
+ "rust-argon2",
+ "serde",
+ "serde_json",
+ "sha2 0.10.2",
+ "tokio-postgres",
 ]
 
 [[package]]
@@ -1265,30 +1311,6 @@ dependencies = [
  "blake2b_simd",
  "constant_time_eq",
  "crossbeam-utils",
-]
-
-[[package]]
-name = "rust_crud"
-version = "0.1.0"
-dependencies = [
- "actix-http",
- "actix-rt",
- "actix-web",
- "actix-web-httpauth",
- "async-trait",
- "chrono",
- "deadpool-postgres",
- "env_logger",
- "hmac 0.12.1",
- "jwt",
- "log",
- "rand_core",
- "rstest",
- "rust-argon2",
- "serde",
- "serde_json",
- "sha2 0.10.2",
- "tokio-postgres",
 ]
 
 [[package]]

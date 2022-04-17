@@ -47,16 +47,20 @@ impl SingnedInfo {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct JWT {
+pub struct Claims {
     pub user_id: i32,
     pub expired_at: String,
+    pub permissions: Vec<String>,
 }
 
-impl JWT {
-    pub fn new(user_id: i32, expired_at: String) -> JWT {
-        JWT {
+impl Claims {
+    pub fn new(user_id: i32, expired_in_days: u32, permissions: Vec<String>) -> Claims {
+        let expired_at =
+            (chrono::Utc::now() + chrono::Duration::days(expired_in_days.into())).to_rfc3339();
+        Claims {
             user_id,
             expired_at,
+            permissions,
         }
     }
 }

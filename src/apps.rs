@@ -14,11 +14,31 @@ use crate::handlers::system::handlers::{ping_handler, ready_handler};
 
 use actix_web::web;
 
+use crate::common::Config;
+use crate::usecases::user::crypto::decode_jwt;
+use actix_web::dev::ServiceRequest;
+use actix_web::error::ErrorUnauthorized;
+use actix_web::Error;
+use actix_web_grants::permissions::AttachPermissions;
+use actix_web_httpauth::extractors::bearer::BearerAuth;
+
+pub async fn bearer_validator(
+    req: ServiceRequest,
+    credentials: BearerAuth,
+) -> Result<ServiceRequest, Error> {
+    let config = Config::create_config();
+    let claims = match decode_jwt(&config.security_config, credentials.token()) {
+        Ok(claims) => claims,
+        Err(_) => return Err(ErrorUnauthorized("Wrong token".to_string())),
+    };
+    req.attach(claims.permissions);
+    Ok(req)
+}
+
 pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(get_user_by_id)
         .service(create_user_handler)
         .service(delete_user_by_id)
-        .service(sign_in_user_handler)
         .service(get_permission_handler)
         .service(create_permission_handler)
         .service(disable_permission_handler)
@@ -30,6 +50,9 @@ pub fn init_api_v1(cfg: &mut web::ServiceConfig) {
         .service(unbind_permission_with_group_handler)
         .service(bind_member_with_group_handler)
         .service(unbind_member_with_group_handler);
+}
+pub fn init_external_v1(cfg: &mut web::ServiceConfig) {
+    cfg.service(get_user_by_id).service(sign_in_user_handler);
 }
 
 pub fn init_system(cfg: &mut web::ServiceConfig) {

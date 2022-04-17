@@ -31,9 +31,15 @@ const INSERT_USER_QUERY: &str = "INSERT INTO users
     (username, password_hash, enabled, created_at, updated_at, is_deleted)
     VALUES ($1, $2, $3, $4, $5, $6) 
     RETURNING user_id, username, enabled, created_at, updated_at";
-const FIND_USER_BY_VERIFICATION: &str = "SELECT user_id 
+const FIND_USER_BY_VERIFICATION: &str = "
+    SELECT user_id 
     FROM users 
     WHERE username=$1 AND password_hash=$2 AND is_deleted=FALSE";
+const GET_USERS_GROUPS_QUERY: &str = "
+    SELECT group_name
+    FROM group_members gm
+    LEFT JOIN groups g USING(group_id) 
+    WHERE user_id=$1 AND g.is_deleted=FALSE AND gm.is_deleted=FALSE";
 
 impl SqlSerializer<User> for User {
     fn from_sql_result(row: &Row) -> User {
@@ -84,6 +90,17 @@ impl SignInVerification for UserRepo {
         match client.query(&stmt, &[&username, &hash]).await {
             Ok(rows) if rows.len() != 0 => Ok(rows[0].get(0)),
             Ok(_) => Err(AccessModelError::NotFoundError),
+            Err(e) => {
+                error!("{}", e);
+                Err(AccessModelError::FatalError)
+            }
+        }
+    }
+    async fn get_users_groups(&self, user_id: &i32) -> Result<Vec<String>, AccessModelError> {
+        let client = get_client(&self.db_pool).await?;
+        let stmt = prepare_stmt(&client, GET_USERS_GROUPS_QUERY).await?;
+        match client.query(&stmt, &[&user_id]).await {
+            Ok(rows) => Ok(rows.into_iter().map(|row| row.get(0)).collect()),
             Err(e) => {
                 error!("{}", e);
                 Err(AccessModelError::FatalError)

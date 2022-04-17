@@ -14,9 +14,11 @@ use crate::usecases::group::group_permissions_binder::{
 };
 use crate::{common::Resources, usecases::group::errors::GroupUCError};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web_grants::proc_macro::has_any_role;
 use log::error;
 
 #[get("groups/{group_id}")]
+#[has_any_role("AUTH_STAFF", "AUTH_MANAGER", "AUTH_ADMIN")]
 pub async fn get_group_handler(
     group_id: web::Path<i32>,
     resources: web::Data<Resources>,
@@ -32,6 +34,7 @@ pub async fn get_group_handler(
 }
 
 #[post("groups")]
+#[has_any_role("AUTH_ADMIN")]
 pub async fn create_group_handler(
     group_data: web::Json<GroupForCreation>,
     resources: web::Data<Resources>,
@@ -39,6 +42,7 @@ pub async fn create_group_handler(
     let group_access_model = GroupRepo::new(resources.db_pool.clone());
     match create_new_group(&group_access_model, group_data.into_inner()).await {
         Ok(group) => HttpResponse::Created().json(GroupView::new(group)),
+        Err(GroupUCError::AlreadyExists) => HttpResponse::BadRequest().body("already exists"),
         Err(_) => {
             error!("usecase error");
             HttpResponse::InternalServerError().body("internal error")
@@ -47,6 +51,7 @@ pub async fn create_group_handler(
 }
 
 #[delete("groups/{group_id}")]
+#[has_any_role("AUTH_ADMIN")]
 pub async fn disable_group_handler(
     group_id: web::Path<i32>,
     resources: web::Data<Resources>,
@@ -62,6 +67,7 @@ pub async fn disable_group_handler(
 }
 
 #[put("groups/bind_permisson")]
+#[has_any_role("AUTH_ADMIN")]
 pub async fn bind_permission_with_group_handler(
     data: web::Json<BindingPermissionCreationScheme>,
     resources: web::Data<Resources>,
@@ -77,6 +83,7 @@ pub async fn bind_permission_with_group_handler(
 }
 
 #[put("groups/{group_id}/unbind_permisson/{permission_id}")]
+#[has_any_role("AUTH_ADMIN")]
 pub async fn unbind_permission_with_group_handler(
     data: web::Path<PermissionBindingQuery>,
     resources: web::Data<Resources>,
@@ -92,6 +99,7 @@ pub async fn unbind_permission_with_group_handler(
 }
 
 #[put("groups/bind_member")]
+#[has_any_role("AUTH_MANAGER", "AUTH_ADMIN")]
 pub async fn bind_member_with_group_handler(
     data: web::Json<BindingMemberCreationScheme>,
     resources: web::Data<Resources>,
@@ -107,6 +115,7 @@ pub async fn bind_member_with_group_handler(
 }
 
 #[put("groups/{group_id}/unbind_member/{user_id}")]
+#[has_any_role("AUTH_MANAGER", "AUTH_ADMIN")]
 pub async fn unbind_member_with_group_handler(
     data: web::Path<MemberBindingQuery>,
     resources: web::Data<Resources>,

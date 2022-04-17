@@ -1,5 +1,5 @@
 use argon2;
-use rust_crud::usecases::user::crypto;
+use authust::usecases::user::crypto;
 mod constants;
 
 #[test]

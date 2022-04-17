@@ -4,12 +4,14 @@ use crate::usecases::user::errors::{SignError, UserUCError};
 use crate::usecases::user::{crypto, get_user, user_creator};
 use actix_web::http::header::Header;
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web_grants::proc_macro::has_any_role;
 use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use log::error;
 use serde::Deserialize;
 use web::Data;
 
 #[get("users/{user_id}")]
+#[has_any_role("AUTH_STAFF", "AUTH_MANAGER", "AUTH_ADMIN")]
 pub async fn get_user_by_id(user_id: web::Path<u32>, resources: Data<Resources>) -> impl Responder {
     let user_id = user_id.into_inner() as i32;
     let user_repo = UserRepo::new(resources.db_pool.clone());
@@ -24,6 +26,7 @@ pub async fn get_user_by_id(user_id: web::Path<u32>, resources: Data<Resources>)
 }
 
 #[delete("users/{user_id}")]
+#[has_any_role("AUTH_MANAGER", "AUTH_ADMIN")]
 pub async fn delete_user_by_id(
     user_id: web::Path<u32>,
     resources: Data<Resources>,
@@ -48,6 +51,7 @@ pub struct UserCreationScheme {
 }
 
 #[post("users")]
+#[has_any_role("AUTH_MANAGER", "AUTH_ADMIN")]
 pub async fn create_user_handler(
     user_data: web::Json<UserCreationScheme>,
     resources: Data<Resources>,

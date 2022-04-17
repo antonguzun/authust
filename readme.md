@@ -1,75 +1,43 @@
-Simple crud web service with actix-web and async postgres integration.
+Simple auth service builded with actix-web and postgres.
 
-### Install and Run
+# Install and Run
 You have to make sure that docker, docker-compose and cargo ^1.56.0 already installed on your system
 
-#### Add enviroments
-```shell
-make add_test_env
-```
-#### How to run dependencies
+## Run tests local
+Project has some integration tests. Start db before run tests. Also you must use the single thread mod to avoid race condition in database.
+
+run db
 ```shell
 make up_db
 ```
-#### Run tests
+run tests
 ```shell
-make tests
+export $(xargs < .env_example) && cargo test -j 1 -- --test-threads=1
 ```
 
-#### Run web service
+## Run web service local
 ```shell
 export $(xargs < .env_example) && cargo run
 ```
 
-### API:
-
-#### insert item
+# API:
+## Basic Auth sign_in `api/v1/users/sign_in`
 ```shell
-curl --location --request POST '127.0.0.1:8080/api/v1/user' \
---header 'Content-Type: application/json' \
---data-raw '{"name": "Jeff"}'
+curl --location --request POST '127.0.0.1:8080/api/v1/users/sign_in' \
+--header 'Authorization: Basic dGVzdF91c2VyOmhlbGxv'
 ```
-`{"id":4,"name":"Jeff"}`
-
-#### get item
-```shell
-curl --location --request GET '127.0.0.1:8080/api/v1/user/4'
+Output:
 ```
-`{"id":4,"name":"Jeff"}`
-
-#### get listing
-```shell
-curl --location --request GET '127.0.0.1:8080/api/v1/user?limit=4'
+{"user_id":2,"jwt_token":"eyJhbGciOiJIUzI1NiJ9.eyJleHBpcmVkX2F0IjoiMjAyMi0wNC0yN1QxMjo1NToxOC41MzE5NzUzNTUrMDA6MDAiLCJncm91cHMiOlsiR1JPVVBfMSIsIkdST1VQXzIiXSwidXNlcl9pZCI6Mn0.PiyObVcPAYS6GbrHAvFWJi9v0JR7ZiQchgOSxSUMyEs"} 
 ```
-`
-[
-    {
-        "id": 1,
-        "name": "Ivan"
-    },
-    {
-        "id": 2,
-        "name": "Anton"
-    },
-    {
-        "id": 3,
-        "name": "Godzilla"
-    },
-    {
-        "id": 4,
-        "name": "Jeff"
-    }
-]
-`
-#### delete item
-```shell
-curl --location --request DELETE '127.0.0.1:8080/api/v1/user/4' -i '
+Where jwt payload is:
 ```
-`HTTP/1.1 204 No Content`
-
-
-### Tests
-Project has some integration tests. Start db before run test. Also you must use the single thread mod to avoid race condition in database.
-```
-export $(xargs < .env_example) && cargo test -j 1 -- --test-threads=1
+{
+  "expired_at": "2022-04-27T12:55:18.531975355+00:00",
+  "groups": [
+    "GROUP_1",
+    "GROUP_2"
+  ],
+  "user_id": 2
+}
 ```

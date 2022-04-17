@@ -1,17 +1,19 @@
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
-use log::info;
-use rust_crud::apps::{init_api_v1, init_system};
-use rust_crud::common::{Config, Resources};
-
+use actix_web_httpauth::middleware::HttpAuthentication;
+use authust::apps::{bearer_validator, init_api_v1, init_external_v1, init_system};
+use authust::common::{Config, Resources};
+use log::debug;
 extern crate env_logger;
 
 pub fn run_server(resources: Resources, config: Config) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(move || {
+        let auth = HttpAuthentication::bearer(bearer_validator);
         App::new()
             .app_data(web::Data::new(config.clone()))
             .data(resources.clone())
-            .service(web::scope("api/v1").configure(init_api_v1))
+            .service(web::scope("api/v1").configure(init_api_v1).wrap(auth))
+            .service(web::scope("auth/v1").configure(init_external_v1))
             .service(web::scope("").configure(init_system))
     })
     .bind("127.0.0.1:8080")?
@@ -24,6 +26,6 @@ async fn main() -> std::io::Result<()> {
     let config = Config::create_config();
     let resources = Resources::create_resources(&config).await;
     env_logger::init();
-    info!(target: "init", "{:#?}", config);
+    debug!(target: "init", "{:#?}", config);
     run_server(resources, config)?.await
 }

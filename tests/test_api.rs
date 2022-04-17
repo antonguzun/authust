@@ -1,18 +1,18 @@
-use actix_web::{http::header, test};
-use rust_crud::common::SecurityConfig;
-use rust_crud::usecases::user::crypto::verificate_jwt;
-use rust_crud::usecases::user::entities::{SingnedInfo, User};
+use actix_web::test;
+use authust::common::SecurityConfig;
+use authust::usecases::user::crypto::decode_jwt;
+use authust::usecases::user::entities::{SingnedInfo, User};
 use serde_json::json;
 
 mod utils;
-use utils::init_test_service;
+use utils::{init_test_service, test_delete, test_get, test_post, IntenalRoles::RoleAdmin};
 mod constants;
 use constants::TEST_BASIC_AUTH_HEADER;
 
 #[actix_web::test]
 async fn test_get_user() {
     let mut app = init_test_service().await;
-    let req = test::TestRequest::get().uri("/api/v1/users/1").to_request();
+    let req = test_get("/api/v1/users/1", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 200)
 }
@@ -20,9 +20,7 @@ async fn test_get_user() {
 #[actix_web::test]
 async fn test_get_user_not_found() {
     let mut app = init_test_service().await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/users/999991")
-        .to_request();
+    let req = test_get("/api/v1/users/999991", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
 }
@@ -30,9 +28,7 @@ async fn test_get_user_not_found() {
 #[actix_web::test]
 async fn test_get_user_wrong_params() {
     let mut app = init_test_service().await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/users/sadf")
-        .to_request();
+    let req = test_get("/api/v1/users/sadf", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
 }
@@ -41,17 +37,15 @@ async fn test_get_user_wrong_params() {
 async fn test_delete_user() {
     let mut app = init_test_service().await;
 
-    let req = test::TestRequest::get().uri("/api/v1/users/3").to_request();
+    let req = test_get("/api/v1/users/3", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 200);
 
-    let req = test::TestRequest::delete()
-        .uri("/api/v1/users/3")
-        .to_request();
+    let req = test_delete("/api/v1/users/3", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 204);
 
-    let req = test::TestRequest::get().uri("/api/v1/users/3").to_request();
+    let req = test_get("/api/v1/users/3", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
 }
@@ -59,9 +53,7 @@ async fn test_delete_user() {
 #[actix_web::test]
 async fn test_delete_user_what_doesnt_exist() {
     let mut app = init_test_service().await;
-    let req = test::TestRequest::delete()
-        .uri("/api/v1/users/999")
-        .to_request();
+    let req = test_delete("/api/v1/users/999", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 204)
 }
@@ -73,9 +65,7 @@ async fn test_create_new_user() {
         "username": "tester",
         "password": "test_pass",
     });
-    let req = test::TestRequest::post()
-        .insert_header(header::ContentType::json())
-        .uri("/api/v1/users")
+    let req = test_post("/api/v1/users", RoleAdmin)
         .set_json(request_body)
         .to_request();
     let resp = test::call_service(&mut app, req).await;
@@ -99,7 +89,7 @@ async fn test_sign_in_forbidden() {
     for wrong_header in wrong_headers {
         let req = test::TestRequest::post()
             .insert_header(wrong_header)
-            .uri("/api/v1/users/sign_in")
+            .uri("/auth/v1/users/sign_in")
             .to_request();
         let resp = test::call_service(&mut app, req).await;
         assert_eq!(resp.status(), 403)
@@ -111,7 +101,7 @@ async fn test_sign_in() {
     let mut app = init_test_service().await;
     let req = test::TestRequest::post()
         .insert_header(TEST_BASIC_AUTH_HEADER)
-        .uri("/api/v1/users/sign_in")
+        .uri("/auth/v1/users/sign_in")
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
@@ -119,8 +109,13 @@ async fn test_sign_in() {
     let signed_info: SingnedInfo = test::read_body_json(resp).await;
     let conf = SecurityConfig {
         secret_key: String::from("some-secret"),
+        public_key: String::from("some-public"),
         expired_jwt_days: 14,
     };
-    let jwt = verificate_jwt(&conf, &signed_info.jwt_token).unwrap();
-    assert_eq!(jwt.user_id, 2);
+    let claims = decode_jwt(&conf, &signed_info.jwt_token).unwrap();
+    assert_eq!(claims.user_id, 2);
+    assert_eq!(
+        claims.permissions,
+        vec!["GROUP_1", "GROUP_2", "ROLE_AUTH_ADMIN"]
+    );
 }

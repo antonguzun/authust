@@ -1,5 +1,5 @@
 [package]
-name = "rust_crud"
+name = "authust"
 version = "0.1.0"
 edition = "2021"
 
@@ -23,6 +23,7 @@ actix-web-httpauth = "0.6.0"
 jwt = "0.16.0"
 hmac = "0.12.1"
 sha2 = "0.10.2"
+actix-web-grants = "3.0.0"
 rand_core = { version = "0.6", features = ["std"] }
 
 [dev-dependencies]

@@ -1,17 +1,15 @@
-use actix_web::{http::header, test};
-use rust_crud::handlers::api::permissions::views::{PermissionListingView, PermissionView};
+use actix_web::test;
+use authust::handlers::api::permissions::views::{PermissionListingView, PermissionView};
 use serde_json::json;
 
 mod utils;
-use utils::init_test_service;
+use utils::{init_test_service, test_delete, test_get, test_post, IntenalRoles::RoleAdmin};
 mod constants;
 
 #[actix_web::test]
 async fn test_get_permission() {
     let mut app = init_test_service().await;
-    let req = test::TestRequest::get()
-        .uri("/api/v1/permissions/1")
-        .to_request();
+    let req = test_get("/api/v1/permissions/1", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 200);
@@ -26,9 +24,7 @@ async fn test_create_new_permission() {
     let request_body = json!({
         "permission_name": "test_permission",
     });
-    let req = test::TestRequest::post()
-        .insert_header(header::ContentType::json())
-        .uri("/api/v1/permissions")
+    let req = test_post("/api/v1/permissions", RoleAdmin)
         .set_json(request_body)
         .to_request();
     let resp = test::call_service(&mut app, req).await;
@@ -43,17 +39,13 @@ async fn test_create_new_permission() {
 async fn test_delete_permission() {
     let mut app = init_test_service().await;
     // delete row wich not existed
-    let req = test::TestRequest::delete()
-        .uri("/api/v1/permissions/9999")
-        .to_request();
+    let req = test_delete("/api/v1/permissions/9999", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 204);
 
     // check initial row state in db
-    let req = test::TestRequest::get()
-        .uri("/api/v1/permissions/1")
-        .to_request();
+    let req = test_get("/api/v1/permissions/1", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 200);
@@ -63,24 +55,18 @@ async fn test_delete_permission() {
     assert_eq!(permission.created_at, permission.updated_at);
 
     // delete
-    let req = test::TestRequest::delete()
-        .uri("/api/v1/permissions/1")
-        .to_request();
+    let req = test_delete("/api/v1/permissions/1", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 204);
     // delete again
-    let req = test::TestRequest::delete()
-        .uri("/api/v1/permissions/1")
-        .to_request();
+    let req = test_delete("/api/v1/permissions/1", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 204);
 
     // check row updated in db
-    let req = test::TestRequest::get()
-        .uri("/api/v1/permissions/1")
-        .to_request();
+    let req = test_get("/api/v1/permissions/1", RoleAdmin).to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
     assert_eq!(status, 200);
@@ -121,7 +107,7 @@ async fn test_get_permissions_listing() {
         },
     ];
     for test_case in test_cases.into_iter() {
-        let req = test::TestRequest::get().uri(test_case.url).to_request();
+        let req = test_get(test_case.url, RoleAdmin).to_request();
         let resp = test::call_service(&mut app, req).await;
         let status = resp.status();
         assert_eq!(status, 200);
