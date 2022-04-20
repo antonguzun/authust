@@ -37,7 +37,7 @@ pub struct PermissionForCreation {
 #[derive(Deserialize, Clone)]
 pub struct PermissionsFilters {
     pub permission_id: Option<i32>,
-    pub group_id: Option<i32>,
+    pub role_id: Option<i32>,
     pub is_deleted: Option<bool>,
     pub permission_name: Option<String>,
     pub offset: Option<i64>,

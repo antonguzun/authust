@@ -1,5 +1,9 @@
 #[allow(dead_code)]
-pub static TEST_USER_ID: i32 = 2;
+pub static TEST_USER_ID_ADMIN: i32 = 1;
+#[allow(dead_code)]
+pub static TEST_USER_ID_MANAGER: i32 = 2;
+#[allow(dead_code)]
+pub static TEST_USER_ID_STAFF: i32 = 3;
 #[allow(dead_code)]
 pub static TEST_USERNAME: &str = "test_user";
 #[allow(dead_code)]

@@ -1,7 +1,7 @@
 use crate::usecases::base_entities::AccessModelError;
-use crate::usecases::user::crypto::generate_hash;
-use crate::usecases::user::entities::{User, UserForCreation};
-use crate::usecases::user::errors::UserUCError;
+use crate::usecases::users::crypto::generate_hash;
+use crate::usecases::users::entities::{User, UserForCreation};
+use crate::usecases::users::errors::UserUCError;
 
 use async_trait::async_trait;
 

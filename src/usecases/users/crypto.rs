@@ -1,7 +1,7 @@
 use crate::common::SecurityConfig;
 use crate::usecases::base_entities::AccessModelError;
-use crate::usecases::user::entities::{Claims, SingnedInfo};
-use crate::usecases::user::errors::SignError;
+use crate::usecases::users::entities::{Claims, SingnedInfo};
+use crate::usecases::users::errors::SignError;
 use argon2::{self, Config};
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
@@ -27,7 +27,7 @@ pub fn generate_hash(password: &str) -> Result<String, SignError> {
 pub fn generate_jwt(
     config: &SecurityConfig,
     user_id: i32,
-    groups: Vec<String>,
+    roles: Vec<String>,
 ) -> Result<String, SignError> {
     let key: Hmac<Sha256> = match Hmac::new_from_slice(config.secret_key.as_bytes()) {
         Ok(key) => key,
@@ -36,7 +36,7 @@ pub fn generate_jwt(
             return Err(SignError::FatalError);
         }
     };
-    let claims = Claims::new(user_id, config.expired_jwt_days, groups);
+    let claims = Claims::new(user_id, config.expired_jwt_days, roles);
     let content = json!(claims);
     match content.sign_with_key(&key) {
         Ok(jwt) => Ok(jwt),
@@ -65,8 +65,8 @@ pub fn decode_jwt(config: &SecurityConfig, jwt_token: &str) -> Result<Claims, Si
 pub trait SignInVerification {
     async fn verificate_default(&self, username: &str, hash: &str)
         -> Result<i32, AccessModelError>;
-    async fn get_users_groups(&self, user_id: &i32) -> Result<Vec<String>, AccessModelError>;
-    async fn get_users_perms(&self, user_id: &i32) -> Result<Vec<String>, AccessModelError>;
+    async fn get_user_roles(&self, user_id: &i32) -> Result<Vec<String>, AccessModelError>;
+    async fn get_user_perms(&self, user_id: &i32) -> Result<Vec<String>, AccessModelError>;
 }
 
 pub async fn sign_in(
@@ -85,11 +85,11 @@ pub async fn sign_in(
         Err(AccessModelError::TemporaryError) => return Err(SignError::TemporaryError),
         Err(_) => return Err(SignError::FatalError),
     };
-    let groups = match verificator.get_users_groups(&user_id).await {
-        Ok(groups) => groups,
+    let roles = match verificator.get_user_roles(&user_id).await {
+        Ok(roles) => roles,
         Err(_) => return Err(SignError::FatalError),
     };
-    let token_str = match generate_jwt(security_config, user_id, groups) {
+    let token_str = match generate_jwt(security_config, user_id, roles) {
         Ok(jwt) => jwt,
         Err(_) => return Err(SignError::FatalError),
     };
@@ -102,7 +102,7 @@ pub async fn verificate_jwt_token_and_enrich_perms(
     jwt_token: &str,
 ) -> Result<Vec<String>, SignError> {
     let claims = decode_jwt(config, jwt_token)?;
-    match verificator.get_users_perms(&claims.user_id).await {
+    match verificator.get_user_perms(&claims.user_id).await {
         Ok(perms) => Ok(perms),
         Err(_) => return Err(SignError::FatalError),
     }

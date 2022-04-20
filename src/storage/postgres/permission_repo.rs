@@ -83,14 +83,14 @@ impl PermissionsFilters {
         let mut params: Vec<&(dyn ToSql + Sync)> = vec![];
         let mut query = base_query.to_string();
         let mut cnt: u8 = 1;
-        match &self.group_id {
-            Some(group_id) => {
+        match &self.role_id {
+            Some(role_id) => {
                 query.push_str(&format!(
-                    " LEFT JOIN group_permissions USING(permission_id) WHERE group_id=${}",
+                    " LEFT JOIN role_permissions USING(permission_id) WHERE role_id=${}",
                     cnt
                 ));
                 cnt += 1;
-                params.push(group_id)
+                params.push(role_id)
             }
             None => query.push_str(" WHERE TRUE"),
         }

@@ -1,7 +1,7 @@
 use crate::common::{Config, Resources};
 use crate::storage::postgres::user_repo::UserRepo;
-use crate::usecases::user::crypto;
-use crate::usecases::user::errors::SignError;
+use crate::usecases::users::crypto;
+use crate::usecases::users::errors::SignError;
 
 use actix_web::dev::ServiceRequest;
 use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};

@@ -1,3 +1,3 @@
-pub mod groups;
 pub mod permissions;
+pub mod roles;
 pub mod users;

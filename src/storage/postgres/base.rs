@@ -63,6 +63,7 @@ pub async fn insert_item<T: SqlSerializer<T>>(
             Err(AccessModelError::FatalError)
         }
         Err(e) if e.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
+            error!("{}", e);
             Err(AccessModelError::AlreadyExists)
         }
         Err(e) => {

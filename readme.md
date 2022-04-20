@@ -34,9 +34,9 @@ Where jwt payload is:
 ```
 {
   "expired_at": "2022-04-27T12:55:18.531975355+00:00",
-  "groups": [
-    "GROUP_1",
-    "GROUP_2"
+  "permissions": [
+    "ROLE_1",
+    "ROLE_2"
   ],
   "user_id": 2
 }

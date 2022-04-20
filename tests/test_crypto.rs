@@ -1,5 +1,5 @@
 use argon2;
-use authust::usecases::user::crypto;
+use authust::usecases::users::crypto;
 mod constants;
 
 #[test]

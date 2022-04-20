@@ -1,14 +1,15 @@
 use actix_web::test;
 
 use authust::common::SecurityConfig;
-use authust::usecases::user::crypto::decode_jwt;
-use authust::usecases::user::entities::{SingnedInfo, User};
+use authust::usecases::users::crypto::decode_jwt;
+use authust::usecases::users::entities::{SingnedInfo, User};
 
 use serde_json::json;
 
 mod utils;
 use utils::{
-    create_test_jwt, init_test_service, test_delete, test_get, test_post, IntenalRoles::RoleAdmin,
+    create_test_jwt, init_test_service, test_delete, test_get, test_post,
+    IntenalRoles::{RoleAdmin, RoleStaff},
 };
 mod constants;
 use constants::TEST_BASIC_AUTH_HEADER;
@@ -16,7 +17,7 @@ use constants::TEST_BASIC_AUTH_HEADER;
 #[actix_web::test]
 async fn test_get_user() {
     let mut app = init_test_service().await;
-    let req = test_get("/api/v1/users/1", RoleAdmin).to_request();
+    let req = test_get("/api/v1/users/1", RoleStaff).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 200)
 }
@@ -24,7 +25,7 @@ async fn test_get_user() {
 #[actix_web::test]
 async fn test_get_user_not_found() {
     let mut app = init_test_service().await;
-    let req = test_get("/api/v1/users/999991", RoleAdmin).to_request();
+    let req = test_get("/api/v1/users/999991", RoleStaff).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
 }
@@ -32,7 +33,7 @@ async fn test_get_user_not_found() {
 #[actix_web::test]
 async fn test_get_user_wrong_params() {
     let mut app = init_test_service().await;
-    let req = test_get("/api/v1/users/sadf", RoleAdmin).to_request();
+    let req = test_get("/api/v1/users/sadf", RoleStaff).to_request();
     let resp = test::call_service(&mut app, req).await;
     assert_eq!(resp.status(), 404);
 }
@@ -74,9 +75,9 @@ async fn test_create_new_user() {
         .to_request();
     let resp = test::call_service(&mut app, req).await;
     let status = resp.status();
+    assert_eq!(status, 201);
     let user: User = test::read_body_json(resp).await;
     assert_eq!(user.username, "tester");
-    assert_eq!(status, 201)
 }
 
 #[actix_web::test]
@@ -119,7 +120,7 @@ async fn test_sign_in() {
     assert_eq!(claims.user_id, 2);
     assert_eq!(
         claims.permissions,
-        vec!["GROUP_1", "GROUP_2", "ROLE_AUTH_ADMIN"]
+        vec!["ROLE_AUTH_MANAGER", "ROLE_AUTH_STAFF", "ROLE_1", "ROLE_2"]
     );
 }
 
@@ -142,7 +143,21 @@ async fn test_validate_jwt() {
     let permissions: Vec<String> = test::read_body_json(resp).await;
     assert_eq!(
         permissions,
-        vec!["PERM_2", "ROLE_AUTH_ADMIN", "GROUP_1", "GROUP_2", "PERM_1"]
+        vec![
+            "ROLE_2",
+            "ROLE_1",
+            "READ_USER",
+            "WRITE_PERMISSION",
+            "ROLE_AUTH_ADMIN",
+            "READ_PERMISSION",
+            "PERM_1",
+            "WRITE_USER",
+            "PERM_2",
+            "BIND_USER_WITH_ROLE",
+            "WRITE_ROLE",
+            "READ_ROLE",
+            "BIND_ROLE_WITH_PERMISSION"
+        ]
     );
 }
 

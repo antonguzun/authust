@@ -1,4 +1,4 @@
-pub enum GroupUCError {
+pub enum RoleUCError {
     FatalError,
     TemporaryError,
     NotFoundError,

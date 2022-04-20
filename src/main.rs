@@ -15,7 +15,6 @@ pub fn run_server(resources: Resources, config: Config) -> Result<Server, std::i
         App::new()
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::new(resources.clone()))
-            .data(resources.clone())
             .service(web::scope("api/v1").configure(init_api_v1).wrap(auth))
             .service(web::scope("srv/v1").configure(init_internal_v1))
             .service(web::scope("auth/v1").configure(init_external_v1))
