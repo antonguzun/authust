@@ -100,3 +100,38 @@ pub async fn sign_in_user_handler(
         }
     }
 }
+
+#[derive(Deserialize)]
+
+pub struct ValidateToken {
+    jwt_token: String,
+}
+
+#[post("validate_jwt")]
+pub async fn validate_jwt_handler(
+    // req: HttpRequest,
+    resources: Data<Resources>,
+    config: Data<Config>,
+    token_data: web::Json<ValidateToken>,
+) -> impl Responder {
+    // TODO authorization for srv methods
+    // let auth_header = match Authorization::<Bearer>::parse(&req) {
+    //     Ok(header) => header,
+    //     Err(_) => return HttpResponse::Forbidden().body("Forbidden"),
+    // };
+    let user_access_model = UserRepo::new(resources.db_pool.clone());
+    match crypto::verificate_jwt_token_and_enrich_perms(
+        &user_access_model,
+        &config.security_config,
+        &token_data.jwt_token,
+    )
+    .await
+    {
+        Ok(perms) => HttpResponse::Ok().json(perms),
+        Err(SignError::VerificationError) => HttpResponse::NotFound().body("not found"),
+        Err(_) => {
+            error!("Usecase fatal error during token validation");
+            HttpResponse::InternalServerError().body("internal error")
+        }
+    }
+}

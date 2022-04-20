@@ -17,7 +17,6 @@ pub struct DbConfig {
 #[derive(Clone, Debug)]
 pub struct SecurityConfig {
     pub secret_key: String,
-    pub public_key: String,
     pub expired_jwt_days: u32,
 }
 
@@ -47,7 +46,6 @@ impl Config {
             },
             security_config: SecurityConfig {
                 secret_key: env::var("SECRET_KEY").expect("Expected env param SECRET_KEY"),
-                public_key: env::var("PUBLIC_KEY").expect("Expected env param PUBLIC_KEY"),
                 expired_jwt_days: env::var("EXPIRED_JWT_DAYS")
                     .expect("Expected env param EXPIRED_JWT_DAYS")
                     .parse()

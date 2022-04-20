@@ -66,6 +66,7 @@ pub trait SignInVerification {
     async fn verificate_default(&self, username: &str, hash: &str)
         -> Result<i32, AccessModelError>;
     async fn get_users_groups(&self, user_id: &i32) -> Result<Vec<String>, AccessModelError>;
+    async fn get_users_perms(&self, user_id: &i32) -> Result<Vec<String>, AccessModelError>;
 }
 
 pub async fn sign_in(
@@ -93,4 +94,16 @@ pub async fn sign_in(
         Err(_) => return Err(SignError::FatalError),
     };
     Ok(SingnedInfo::new(user_id, token_str.to_string()))
+}
+
+pub async fn verificate_jwt_token_and_enrich_perms(
+    verificator: &impl SignInVerification,
+    config: &SecurityConfig,
+    jwt_token: &str,
+) -> Result<Vec<String>, SignError> {
+    let claims = decode_jwt(config, jwt_token)?;
+    match verificator.get_users_perms(&claims.user_id).await {
+        Ok(perms) => Ok(perms),
+        Err(_) => return Err(SignError::FatalError),
+    }
 }

@@ -3,9 +3,12 @@ use actix_web::body::BoxBody;
 use actix_web::dev::{Service, ServiceResponse};
 use actix_web::{http::header, test, web, App};
 use actix_web_httpauth::middleware::HttpAuthentication;
-use authust::apps::{bearer_validator, init_api_v1, init_external_v1, init_system};
+
+use authust::apps::{init_api_v1, init_external_v1, init_internal_v1, init_system};
 use authust::common::{Config, Resources};
+use authust::middlewares::bearer_validator;
 use authust::usecases::user::crypto::generate_jwt;
+
 use std::fs;
 use std::str::FromStr;
 
@@ -97,6 +100,7 @@ pub async fn init_test_service(
             .app_data(web::Data::new(config.clone()))
             .data(resources.clone())
             .service(web::scope("api/v1").configure(init_api_v1).wrap(auth))
+            .service(web::scope("srv/v1").configure(init_internal_v1))
             .service(web::scope("auth/v1").configure(init_external_v1))
             .service(web::scope("").configure(init_system)),
     )
@@ -104,6 +108,14 @@ pub async fn init_test_service(
 }
 
 use actix_web::http::header::{HeaderName, HeaderValue};
+#[allow(dead_code)]
+pub fn create_test_jwt() -> String {
+    let config = Config::create_config().security_config;
+    let jwt = generate_jwt(&config, constants::TEST_USER_ID, vec!["fake".to_string()])
+        .expect("can not create jwt for tests");
+    jwt
+}
+
 fn create_bearer_header<'a>(role: IntenalRoles) -> (HeaderName, HeaderValue) {
     let config = Config::create_config().security_config;
     let roles = match role {

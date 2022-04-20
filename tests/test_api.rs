@@ -1,11 +1,15 @@
 use actix_web::test;
+
 use authust::common::SecurityConfig;
 use authust::usecases::user::crypto::decode_jwt;
 use authust::usecases::user::entities::{SingnedInfo, User};
+
 use serde_json::json;
 
 mod utils;
-use utils::{init_test_service, test_delete, test_get, test_post, IntenalRoles::RoleAdmin};
+use utils::{
+    create_test_jwt, init_test_service, test_delete, test_get, test_post, IntenalRoles::RoleAdmin,
+};
 mod constants;
 use constants::TEST_BASIC_AUTH_HEADER;
 
@@ -109,7 +113,6 @@ async fn test_sign_in() {
     let signed_info: SingnedInfo = test::read_body_json(resp).await;
     let conf = SecurityConfig {
         secret_key: String::from("some-secret"),
-        public_key: String::from("some-public"),
         expired_jwt_days: 14,
     };
     let claims = decode_jwt(&conf, &signed_info.jwt_token).unwrap();
@@ -118,4 +121,42 @@ async fn test_sign_in() {
         claims.permissions,
         vec!["GROUP_1", "GROUP_2", "ROLE_AUTH_ADMIN"]
     );
+}
+
+#[actix_web::test]
+async fn test_validate_jwt() {
+    // create_test_jwt create fake perms in payload
+    // test checks that /srv/v1/validate_jwt get perms from db by user_id
+    let mut app = init_test_service().await;
+    let jwt = create_test_jwt();
+    let request_body = json!({
+        "jwt_token": jwt,
+    });
+    let req = test::TestRequest::post()
+        .uri("/srv/v1/validate_jwt")
+        .set_json(request_body)
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 200);
+    let permissions: Vec<String> = test::read_body_json(resp).await;
+    assert_eq!(
+        permissions,
+        vec!["PERM_2", "ROLE_AUTH_ADMIN", "GROUP_1", "GROUP_2", "PERM_1"]
+    );
+}
+
+#[actix_web::test]
+async fn test_validate_jwt_wrong_token() {
+    let mut app = init_test_service().await;
+    let request_body = json!({
+        "jwt_token": "wrong_token",
+    });
+    let req = test::TestRequest::post()
+        .uri("/srv/v1/validate_jwt")
+        .set_json(request_body)
+        .to_request();
+    let resp = test::call_service(&mut app, req).await;
+    let status = resp.status();
+    assert_eq!(status, 404);
 }
