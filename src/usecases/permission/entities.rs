@@ -40,6 +40,18 @@ pub struct PermissionsFilters {
     pub role_id: Option<i32>,
     pub is_deleted: Option<bool>,
     pub permission_name: Option<String>,
-    pub offset: Option<i64>,
-    pub limit: Option<i64>,
+    pub offset: i64,
+    pub limit: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PermissionsList {
+    pub permissions: Vec<Permission>,
+    pub total: i64,
+}
+
+impl PermissionsList {
+    pub fn new(permissions: Vec<Permission>, total: i64) -> PermissionsList {
+        PermissionsList { permissions, total }
+    }
 }

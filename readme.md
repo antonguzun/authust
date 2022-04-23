@@ -28,13 +28,18 @@ curl --location --request POST '127.0.0.1:8080/api/v1/users/sign_in' \
 ```
 Output:
 ```
-{"user_id":2,"jwt_token":"eyJhbGciOiJIUzI1NiJ9.eyJleHBpcmVkX2F0IjoiMjAyMi0wNC0yN1QxMjo1NToxOC41MzE5NzUzNTUrMDA6MDAiLCJncm91cHMiOlsiR1JPVVBfMSIsIkdST1VQXzIiXSwidXNlcl9pZCI6Mn0.PiyObVcPAYS6GbrHAvFWJi9v0JR7ZiQchgOSxSUMyEs"} 
+{
+    "user_id": 2,
+    "jwt_token": "eyJhbGciOiJIUzI1NiJ9.eyJleHBpcmVkX2F0IjoiMjAyMi0wNS0wN1QxMjoyODo0OC4wODk1OTIyNTErMDA6MDAiLCJwZXJtaXNzaW9ucyI6WyJST0xFX0FVVEhfTUFOQUdFUiIsIlJPTEVfQVVUSF9TVEFGRiIsIlJPTEVfMSIsIlJPTEVfMiJdLCJ1c2VyX2lkIjoyfQ.RMbfAMzNo5vVV_32GRef8YEUWoiYe4LCg3GWUpg02Rs"
+}
 ```
 Where jwt payload is:
 ```
 {
-  "expired_at": "2022-04-27T12:55:18.531975355+00:00",
+  "expired_at": "2022-05-07T12:28:48.089592251+00:00",
   "permissions": [
+    "ROLE_AUTH_MANAGER",
+    "ROLE_AUTH_STAFF",
     "ROLE_1",
     "ROLE_2"
   ],

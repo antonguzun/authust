@@ -1,17 +1,20 @@
-use crate::storage::postgres::base::{delete_item, get_item, insert_item, SqlSerializer};
-use crate::storage::postgres::base::{get_client, prepare_stmt};
+use crate::storage::postgres::base::{
+    delete_item, get_client, get_count, get_item, get_list, insert_item,
+};
+use crate::storage::postgres::base::{CountQueryBuilder, ListingQueryBuilder, SqlSerializer};
+
 use crate::usecases::base_entities::AccessModelError;
 use crate::usecases::permission::entities::{
-    Permission, PermissionForCreation, PermissionsFilters,
+    Permission, PermissionForCreation, PermissionsFilters, PermissionsList,
 };
 use crate::usecases::permission::permission_creator::CreatePermission;
 use crate::usecases::permission::permission_disabler::DisablePermission;
 use crate::usecases::permission::permission_get_item::GetPermission;
 use crate::usecases::permission::permission_get_list::GetPermissionsList;
+
 use async_trait::async_trait;
 use chrono;
 use deadpool_postgres::Pool;
-use log::error;
 use tokio_postgres::types::ToSql;
 use tokio_postgres::Row;
 
@@ -39,6 +42,7 @@ const DISABLE_PERMISSION_BY_ID_QUERY: &str = "UPDATE permissions
 const GET_BY_FILTERS_QUERY: &str =
     "SELECT permission_id, permission_name, p.created_at, p.updated_at, p.is_deleted 
     FROM permissions p";
+const GET_TOTAL_BY_FILTERS_QUERY: &str = "SELECT count(1) FROM permissions p";
 
 impl SqlSerializer<Permission> for Permission {
     fn from_sql_result(row: &Row) -> Permission {
@@ -75,65 +79,64 @@ impl DisablePermission for PermissionRepo {
     }
 }
 
-impl PermissionsFilters {
-    fn build_listing_query_with_params(
-        &self,
-        base_query: &str,
-    ) -> (String, Vec<&(dyn ToSql + Sync)>) {
-        let mut params: Vec<&(dyn ToSql + Sync)> = vec![];
-        let mut query = base_query.to_string();
-        let mut cnt: u8 = 1;
-        match &self.role_id {
-            Some(role_id) => {
-                query.push_str(&format!(
-                    " LEFT JOIN role_permissions USING(permission_id) WHERE role_id=${}",
-                    cnt
-                ));
-                cnt += 1;
-                params.push(role_id)
-            }
-            None => query.push_str(" WHERE TRUE"),
+fn add_permission_filters<'r, 'a>(
+    query: &'r mut String,
+    filters: &'a PermissionsFilters,
+) -> (&'r mut String, Vec<&'a (dyn ToSql + Sync)>) {
+    let mut params: Vec<&(dyn ToSql + Sync)> = vec![];
+    let mut cnt: u8 = 1;
+    match &filters.role_id {
+        Some(role_id) => {
+            query.push_str(&format!(
+                " LEFT JOIN role_permissions USING(permission_id) WHERE role_id=${}",
+                cnt
+            ));
+            cnt += 1;
+            params.push(role_id)
         }
-        match &self.permission_id {
-            Some(permission_id) => {
-                params.push(permission_id);
-                query.push_str(&format!(" AND p.permission_id=${}", cnt));
-                cnt += 1;
-            }
-            None => (),
+        None => query.push_str(" WHERE TRUE"),
+    }
+    match &filters.permission_id {
+        Some(permission_id) => {
+            params.push(permission_id);
+            query.push_str(&format!(" AND p.permission_id=${}", cnt));
+            cnt += 1;
         }
-        match &self.permission_name {
-            Some(permission_name) => {
-                params.push(permission_name);
-                query.push_str(&format!(" AND permission_name=${}", cnt));
-                cnt += 1;
-            }
-            None => (),
+        None => (),
+    }
+    match &filters.permission_name {
+        Some(permission_name) => {
+            params.push(permission_name);
+            query.push_str(&format!(" AND permission_name=${}", cnt));
+            cnt += 1;
         }
-        match &self.is_deleted {
-            Some(is_deleted) => {
-                params.push(is_deleted);
-                query.push_str(&format!(" AND p.is_deleted=${}", cnt));
-                cnt += 1;
-            }
-            None => (),
+        None => (),
+    }
+    match &filters.is_deleted {
+        Some(is_deleted) => {
+            params.push(is_deleted);
+            query.push_str(&format!(" AND p.is_deleted=${}", cnt));
         }
-        match &self.offset {
-            Some(offset) => {
-                params.push(offset);
-                query.push_str(&format!(" OFFSET ${}", cnt));
-                cnt += 1;
-            }
-            None => query.push_str(" OFFSET 0"),
-        }
-        match &self.limit {
-            Some(limit) => {
-                params.push(limit);
-                query.push_str(&format!(" LIMIT ${}", cnt))
-            }
-            None => query.push_str(" LIMIT 1000"),
-        }
-        (query, params)
+        None => (),
+    }
+    (query, params)
+}
+
+impl ListingQueryBuilder for PermissionsFilters {
+    fn build_listing_query_with_params(&self) -> (String, Vec<&(dyn ToSql + Sync)>) {
+        let mut query = GET_BY_FILTERS_QUERY.to_string();
+        let (query, params) = add_permission_filters(&mut query, &self);
+        query.push_str(&format!(" ORDER BY permission_id DESC"));
+        query.push_str(&format!(" OFFSET {}", &self.offset));
+        query.push_str(&format!(" LIMIT {}", &self.limit));
+        (query.to_string(), params)
+    }
+}
+impl CountQueryBuilder for PermissionsFilters {
+    fn build_count_query_with_params(&self) -> (String, Vec<&(dyn ToSql + Sync)>) {
+        let mut query = GET_TOTAL_BY_FILTERS_QUERY.to_string();
+        let (query, params) = add_permission_filters(&mut query, &self);
+        (query.to_string(), params)
     }
 }
 
@@ -142,19 +145,10 @@ impl GetPermissionsList for PermissionRepo {
     async fn get_permissions_by_filters(
         &self,
         filters: PermissionsFilters,
-    ) -> Result<Vec<Permission>, AccessModelError> {
+    ) -> Result<PermissionsList, AccessModelError> {
         let client = get_client(&self.db_pool).await?;
-        let (query, params) = filters.build_listing_query_with_params(GET_BY_FILTERS_QUERY);
-        let stmt = prepare_stmt(&client, &query).await?;
-        match client.query(&stmt, &params).await {
-            Ok(rows) => Ok(rows
-                .into_iter()
-                .map(|row| Permission::from_sql_result(&row))
-                .collect()),
-            Err(e) => {
-                error!("{}", e);
-                Err(AccessModelError::FatalError)
-            }
-        }
+        let perms = get_list(&client, filters.clone()).await?;
+        let total = get_count(&client, filters).await?;
+        Ok(PermissionsList::new(perms, total))
     }
 }

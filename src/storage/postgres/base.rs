@@ -111,3 +111,45 @@ pub async fn delete_item(
         }
     }
 }
+
+pub trait ListingQueryBuilder {
+    fn build_listing_query_with_params(&self) -> (String, Vec<&(dyn ToSql + Sync)>);
+}
+
+pub trait CountQueryBuilder {
+    fn build_count_query_with_params(&self) -> (String, Vec<&(dyn ToSql + Sync)>);
+}
+
+pub async fn get_list<F, T>(client: &Client, filters: F) -> Result<Vec<T>, AccessModelError>
+where
+    F: ListingQueryBuilder,
+    T: SqlSerializer<T>,
+{
+    let (query, params) = filters.build_listing_query_with_params();
+    let stmt = prepare_stmt(&client, &query).await?;
+    match client.query(&stmt, &params).await {
+        Ok(rows) => Ok(rows
+            .into_iter()
+            .map(|row| T::from_sql_result(&row))
+            .collect()),
+        Err(e) => {
+            error!("{}", e);
+            Err(AccessModelError::FatalError)
+        }
+    }
+}
+pub async fn get_count<F: CountQueryBuilder>(
+    client: &Client,
+    filters: F,
+) -> Result<i64, AccessModelError> {
+    let (query, params) = filters.build_count_query_with_params();
+    let stmt = prepare_stmt(&client, &query).await?;
+    match client.query(&stmt, &params).await {
+        Ok(rows) if rows.len() == 1 => Ok(rows[0].get(0)),
+        Ok(_) => Err(AccessModelError::FatalError),
+        Err(e) => {
+            error!("{}", e);
+            Err(AccessModelError::FatalError)
+        }
+    }
+}

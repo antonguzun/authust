@@ -4,26 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# general
 log = "0.4.14"
 env_logger = {version = "0.9.0", default-features = false}
-serde = {version = "1.0", features = ["derive"]}
 chrono = { version = "0.4", features = ["serde"] }
+serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0.79"
-
-actix-web = "4.0.1"
-
+async-trait = "0.1.51"
+# db
 deadpool-postgres = "0.10.0"
 tokio-postgres = { version = "^0.7.5", features = ["with-chrono-0_4", "with-time-0_2"]}
-actix-rt = "2.4.0"
+sql-builder = "3.1.1"
+# web
+actix-web = "4.0"
 actix-http = "3.0.0-beta.11"
-async-trait = "0.1.51"
-
-rust-argon2 = "1.0"
+actix-rt = "2.4.0"
+# web auth
 actix-web-httpauth = "0.6.0"
+actix-web-grants = "3.0.0"
+rust-argon2 = "1.0"
 jwt = "0.16.0"
 hmac = "0.12.1"
 sha2 = "0.10.2"
-actix-web-grants = "3.0.0"
 rand_core = { version = "0.6", features = ["std"] }
 
 [dev-dependencies]

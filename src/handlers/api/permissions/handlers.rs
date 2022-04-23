@@ -1,7 +1,9 @@
 use crate::common::Resources;
-use crate::handlers::api::permissions::views::{PermissionListingView, PermissionView};
+use crate::handlers::api::permissions::views::{
+    PermissionListingView, PermissionView, PermissionsFiltersInputScheme,
+};
 use crate::storage::postgres::permission_repo::PermissionRepo;
-use crate::usecases::permission::entities::{PermissionForCreation, PermissionsFilters};
+use crate::usecases::permission::entities::PermissionForCreation;
 use crate::usecases::permission::errors::PermissionUCError;
 use crate::usecases::permission::permission_creator::create_new_permission;
 use crate::usecases::permission::permission_disabler::disable_permission_by_id;
@@ -31,12 +33,24 @@ pub async fn get_permission_handler(
 #[get("permissions")]
 #[has_permissions("READ_PERMISSION")]
 pub async fn permissions_listing_handler(
-    filters: web::Query<PermissionsFilters>,
+    filters: web::Query<PermissionsFiltersInputScheme>,
     resources: web::Data<Resources>,
 ) -> impl Responder {
+    let validated_filters =
+        match PermissionsFiltersInputScheme::new_with_validation(filters.into_inner()) {
+            Ok(data) => data,
+            Err(e) => return HttpResponse::BadRequest().body(e),
+        };
+    let offset = validated_filters.offset;
+    let limit = validated_filters.limit;
     let permission_access_model = PermissionRepo::new(resources.db_pool.clone());
-    match get_permissions_by_filters(&permission_access_model, filters.into_inner()).await {
-        Ok(permissions) => HttpResponse::Ok().json(PermissionListingView::new(permissions)),
+    match get_permissions_by_filters(&permission_access_model, validated_filters).await {
+        Ok(listing) => HttpResponse::Ok().json(PermissionListingView::new(
+            listing.permissions,
+            offset,
+            limit,
+            listing.total,
+        )),
         Err(_) => {
             error!("usecase error");
             HttpResponse::InternalServerError().body("internal error")
